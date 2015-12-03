@@ -82,8 +82,8 @@ function iteratorChangePrice(i, nodeList) {
 }
 
 var MINIMUM_PRICE = 3.0;
-var FIVE_STAR_TOP_PRICE = 6.2;
-var FOUR_STAR_TOP_PRICE = 5.2;
+var FIVE_STAR_TOP_PRICE = 6.6;
+var FOUR_STAR_TOP_PRICE = 5.7;
 
 function getLowestPrice() {
 
