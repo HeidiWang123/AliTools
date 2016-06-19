@@ -1,0 +1,4 @@
+Spider/config.ini
+Spider/data.dump
+Spider/output.csv
+Spider/*.log
