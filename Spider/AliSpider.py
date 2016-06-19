@@ -84,6 +84,8 @@ class AliSpider():
         with open(data_dump_path, 'a') as self.data_file:
             self._crawl_data(begin_index)
 
+        os.remove(data_dump_path)
+
         return self.data
 
     def _crawl_data(self, begin_index = 0):
@@ -115,7 +117,7 @@ class AliSpider():
             printProgress(
                 index + 1,
                 products_count,
-                prefix = "[Products]",
+                prefix = "[processing]",
                 suffix = "Page %d / %d" % (index + 1, products_count)
             )
 
