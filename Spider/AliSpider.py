@@ -104,9 +104,11 @@ class AliSpider():
 
             if page_count is 0:
                 page_count = math.ceil(result['count'] / page_size)
-                page_index = 0
 
             self._build_data_item(result, page_index)
+
+            if (page_index is not 0):
+                page_index = 0
 
             page += 1
 
