@@ -98,6 +98,7 @@ class AliSpider():
         page_count = 0
 
         while (page_count is 0 or page <= page_count):
+            print("Start crawl page %d ......" % current_page + 1)
 
             result = self._crawl_products(page_size, page)
 
