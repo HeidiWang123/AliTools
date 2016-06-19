@@ -246,8 +246,9 @@ class AliSpider():
         request_url     = self.request_info[item]['url']
         request_data    = self.request_info[item]['data']
 
-        request_data['size'] = int(page_size)
-        request_data['page'] = int(page)
+        request_data['size']        = int(page_size)
+        request_data['page']        = int(page)
+        request_data['gmtModified'] = "asc"
 
         self._delay()
         return self.request_session[item].post( request_url, data = request_data).json()
