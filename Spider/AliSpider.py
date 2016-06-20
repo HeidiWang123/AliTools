@@ -187,7 +187,7 @@ class AliSpider():
                     "keyword_company_count"         : keyword_info['company_cnt'],
                     "keyword_window_products_count" : keyword_info['showwin_cnt'],
                     "keyword_pv_rank"               : keyword_info['srh_pv_this_mon'],
-                    "keyword_is_p4p"                : keyword_info['isP4pKeyword']
+                    "is_p4p_keyword"                : keyword_info['isP4pKeyword']
                 }
                 return data_item
 
