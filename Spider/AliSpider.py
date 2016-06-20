@@ -295,7 +295,13 @@ class AliSpider():
 
 if __name__ == '__main__':
     spider = AliSpider()
-    data = spider.get_data()
+    data = list
+    while True:
+        try:
+            data = spider.get_data()
+        except Exception as e:
+            continue
+        break
 
     with open('./output.csv', 'w') as output_file:
         dict_writer = csv.DictWriter(
