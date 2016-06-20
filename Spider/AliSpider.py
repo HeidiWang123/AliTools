@@ -78,15 +78,21 @@ class AliSpider():
         if os.path.isfile(data_dump_path):
             with open(data_dump_path, 'r') as data_file:
                 self.data       = [ast.literal_eval(x) for x in data_file.readlines() if x is not None]
-                product_no_list = [x['product_no'] for x in self.data]
-                begin_index     = len(set(product_no_list))
 
         with open(data_dump_path, 'a') as self.data_file:
-            self._crawl_data(begin_index)
+            self._crawl_data()
 
         os.remove(data_dump_path)
 
         return self.data
+
+    def _get_product_no_list(self):
+        try:
+            self._dumped_product_no_list
+        except Exception as e:
+            self._dumped_product_no_list = [x['product_no'] for x in self.data]
+
+        return self._dumped_product_no_list
 
     def _crawl_data(self, begin_index = 0):
         keywords_request_info = self.request_info['keywords']
@@ -107,15 +113,15 @@ class AliSpider():
 
             self._build_data_item(result, page_index)
 
-            if (page_index is not 0):
+            if page_index is not 0:
                 page_index = 0
 
             page += 1
 
-    def _build_data_item(self, data, current_page_index = 0):
+    def _build_data_item(self, data, page_index = 0):
         products_count = len(data['products'])
         for index in range(products_count):
-            if index < current_page_index:
+            if index < page_index:
                 continue
 
             printProgress(
@@ -135,6 +141,7 @@ class AliSpider():
 
             if item['displayStatus'] is 'y':
                 product_data_list = list()
+                is_in_dumped_list = False
                 for keyword in product_keywords:
                     data_item = {
                         'keyword'           : keyword,
@@ -144,16 +151,20 @@ class AliSpider():
                         'is_window_product' : is_window_product,
                         'is_ydt_product'    : is_ydt_product
                     }
+                    if not is_in_dumped_list and product_no in self._get_product_no_list():
+                        is_in_dumped_list = True
+                        break
+
                     data_item.update(self._get_keywords_info(keyword))
                     data_item.update(self._get_rank_info(keyword = keyword, product_id = product_id))
                     product_data_list.append(data_item)
 
-                self.data.append(data_item)
+                if not is_in_dumped_list:
+                    self.data.append(data_item)
 
-                for data_item in product_data_list:
-                    self.data_file.write("%s\n" % data_item)
-                self.data_file.flush()
-
+                    for data_item in product_data_list:
+                        self.data_file.write("%s\n" % data_item)
+                        self.data_file.flush()
 
     def _get_keywords_info(self, keyword):
         current_page = 1
