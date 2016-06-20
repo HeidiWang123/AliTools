@@ -209,6 +209,7 @@ class AliSpider():
     def _get_rank_info(self, keyword, product_id):
         result        = self._crawl_rank(keyword)
         crawl_results = self._parse_crawl_result(result)
+
         if crawl_results is None:
             return {
                 "rank_top1_product_id"       : None,
@@ -217,29 +218,36 @@ class AliSpider():
                 "is_selection_prodcut"       : False
             }
 
-        crawl_results_sorted = sorted(crawl_results, key=lambda x: x['position'])
+        current_product = dict()
+        top1_product    = dict()
 
-        top1_product    = crawl_results_sorted[0]
-        current_product = {}
-        for item in crawl_results_sorted:
+        for item in crawl_results:
             if item['product_id'] == product_id:
                 current_product = item
+
+        crawl_results_sorted = sorted(crawl_results, key=lambda x: x['position'])
+        top1_product    = crawl_results_sorted[0]
 
         return {
             "rank_top1_product_id"       : top1_product['product_id'],
             "rank_top1_product_position" : top1_product['position'],
             "rank_product_position"      : current_product.get('position', None),
-            "is_selection_prodcut"       : current_product.get('is_selection_prodcut', None) or top1_product.get('is_selection_prodcut', None)
+            "is_selection_prodcut"  json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+     : current_product.get('is_selection_prodcut', None) or top1_product.get('is_selection_prodcut', None)
         }
 
     def _parse_crawl_result(self, result):
         soup = BeautifulSoup(result, 'html.parser')
         rows = soup.select('#rank-searech-table > tbody > tr')
+        tips = soup.select('.search-result')
+
+        if '查询太频繁，请明日再试！' in str(tips):
+            raise RuntimeError('查询太频繁，请明日再试！') from error
 
         if '无匹配结果' in str(rows):
             return None
 
-        search_results = []
+        search_results = list()
         for row in rows:
             product_href = row.select('td:nth-of-type(1) > a')[0].get('href')
             rank_text    = row.select('td:nth-of-type(2) > a')[0].text.strip()
@@ -266,7 +274,10 @@ class AliSpider():
         request_data['gmtModified'] = "asc"
 
         self._delay()
-        return self.request_session[item].post( request_url, data = request_data).json()
+
+        r = self.request_session[item].post( request_url, data = request_data)
+        r.raise_for_status()
+        return r.json()
 
     def _crawl_keywords(self, keyword, page_size = 10, page_index = 0):
         item = 'keywords'
@@ -278,7 +289,10 @@ class AliSpider():
         request_data['pageNO']   = int(page_index)
 
         self._delay()
-        return self.request_session[item].post( request_url, data = request_data).json()
+
+        r = self.request_session[item].post( request_url, data = request_data)
+        r.raise_for_status()
+        return r.json()
 
     def _crawl_rank(self, keyword):
         item = 'rank'
@@ -288,7 +302,10 @@ class AliSpider():
         request_data['queryString'] = keyword
 
         self._delay()
-        return self.request_session[item].post( request_url, data = request_data).content
+
+        r = self.request_session[item].post( request_url, data = request_data)
+        r.raise_for_status()
+        return r.content
 
     def _delay(self):
         time.sleep(random.uniform(1, 3))
@@ -299,8 +316,11 @@ if __name__ == '__main__':
     while True:
         try:
             data = spider.get_data()
-        except Exception as e:
+        except requests.exceptions.ConnectionError as e:
+            time.sleep(100)
             continue
+        except Exception as e:
+            print(e.value)
         break
 
     with open('./output.csv', 'w') as output_file:
