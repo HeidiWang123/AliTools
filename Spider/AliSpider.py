@@ -77,7 +77,7 @@ class AliSpider():
         data_dump_path = './data.dump'
         if os.path.isfile(data_dump_path):
             with open(data_dump_path, 'r') as data_file:
-                self.data       = [ast.literal_eval(x) for x in data_file.readlines() if x is not None]
+                self.data = [ast.literal_eval(x) for x in data_file.readlines() if x is not None]
 
         with open(data_dump_path, 'a') as self.data_file:
             self._crawl_data()
@@ -307,20 +307,12 @@ class AliSpider():
         return r.content
 
     def _delay(self):
-        time.sleep(random.uniform(1, 3))
+        time.sleep(random.uniform(1, 10))
 
 if __name__ == '__main__':
     spider = AliSpider()
-    data = list
-    while True:
-        try:
-            data = spider.get_data()
-        except requests.exceptions.ConnectionError as e:
-            time.sleep(100)
-            continue
-        except Exception as e:
-            print(e.value)
-        break
+    data = list()
+    data = spider.get_data()
 
     with open('./output.csv', 'w') as output_file:
         dict_writer = csv.DictWriter(
