@@ -143,7 +143,7 @@ class AliSpider():
             is_window_product = item['isWindowProduct']
             is_ydt_product    = item['mappedToYdtProduct']
 
-            if item['displayStatus'] is 'y' and not self._get_product_no_list():
+            if item['displayStatus'] is 'y' and product_no not in self._get_product_no_list():
                 product_data_list = list()
                 for keyword in product_keywords:
                     data_item = {
