@@ -87,12 +87,7 @@ class AliSpider():
         return self.data
 
     def _get_product_no_list(self):
-        try:
-            self._dumped_product_no_list
-        except Exception as e:
-            self._dumped_product_no_list = [x['product_no'] for x in self.data]
-
-        return self._dumped_product_no_list
+        return [x['product_no'] for x in self.data]
 
     def _crawl_data(self, begin_index = 0):
         keywords_request_info = self.request_info['keywords']
@@ -139,9 +134,8 @@ class AliSpider():
             is_window_product = item['isWindowProduct']
             is_ydt_product    = item['mappedToYdtProduct']
 
-            if item['displayStatus'] is 'y':
+            if item['displayStatus'] is 'y' and not self._get_product_no_list():
                 product_data_list = list()
-                is_in_dumped_list = False
                 for keyword in product_keywords:
                     data_item = {
                         'keyword'           : keyword,
@@ -151,20 +145,15 @@ class AliSpider():
                         'is_window_product' : is_window_product,
                         'is_ydt_product'    : is_ydt_product
                     }
-                    if not is_in_dumped_list and product_no in self._get_product_no_list():
-                        is_in_dumped_list = True
-                        break
-
                     data_item.update(self._get_keywords_info(keyword))
                     data_item.update(self._get_rank_info(keyword = keyword, product_id = product_id))
                     product_data_list.append(data_item)
 
-                if not is_in_dumped_list:
-                    self.data.append(data_item)
+                self.data.append(data_item)
 
-                    for data_item in product_data_list:
-                        self.data_file.write("%s\n" % data_item)
-                        self.data_file.flush()
+                for data_item in product_data_list:
+                    self.data_file.write("%s\n" % data_item)
+                self.data_file.flush()
 
     def _get_keywords_info(self, keyword):
         current_page = 1
@@ -241,7 +230,7 @@ class AliSpider():
         tips = soup.select('.search-result')
 
         if '查询太频繁，请明日再试！' in str(tips):
-            raise RuntimeError('查询太频繁，请明日再试！') from error
+            raise RuntimeError('查询太频繁，请明日再试！')
 
         if '无匹配结果' in str(rows):
             return None
@@ -312,7 +301,15 @@ class AliSpider():
 if __name__ == '__main__':
     spider = AliSpider()
     data = list()
-    data = spider.get_data()
+    while True:
+        try:
+            data = spider.get_data()
+        except requests.exceptions.ConnectionError as e:
+            time.sleep(50)
+            continue
+        except Exception as e:
+            print(e.value)
+        break
 
     with open('./output.csv', 'w') as output_file:
         dict_writer = csv.DictWriter(
