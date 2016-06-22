@@ -82,7 +82,16 @@ class AliSpider():
         with open(data_dump_path, 'a') as self.data_file:
             self._crawl_data()
 
-        os.remove(data_dump_path)
+        for item in self.data:
+            item.update({
+                "rank_top1_product_no" : x['product_no'] for x in self.data if x['product_id'] == item['rank_top1_product_id']
+            })
+
+        for item in self.data:
+            item.pop("product_id", None)
+            item.pop("rank_top1_product_id", None)
+
+        # os.remove(data_dump_path)
 
         return self.data
 
@@ -312,12 +321,27 @@ if __name__ == '__main__':
         break
 
     with open('./output.csv', 'w') as output_file:
-        dict_writer = csv.DictWriter(
-            output_file,
-            fieldnames = data[0].keys(),
-            delimiter = ',',
-            quotechar = '|',
-            quoting = csv.QUOTE_MINIMAL
-        )
-        dict_writer.writeheader()
+        headers = [
+            ('keyword',                       '关键词'),
+            ('product_owner',                 '负责人'),
+            ('product_no',                    '产品编号'),
+            ('rank_product_position',         '产品排名'),
+            ('rank_top1_product_position',    '第一位排名'),
+            ('rank_top1_product_no',          '第一产品'),
+            ('is_selection_prodcut',          '搜索首页精选'),
+            ('is_ydt_product',                '贸易表现'),
+            ('is_window_product',             '橱窗'),
+            ('is_p4p_keyword',                'P4P'),
+            ('keyword_company_count',         '供应商竞争度'),
+            ('keyword_pv_rank',               '热搜度'),
+            ('keyword_window_products_count', '橱窗数')
+        ]
+
+        dict_writer = csv.DictWriter(output_file, fieldnames = [x[0] for x in headers])
+        headers_row = {}
+        for item in dict_writer.fieldnames:
+            for h in headers:
+                if h[0] == item:
+                    headers_row[item] = h[1]
+        dict_writer.writerow(headers_row)
         dict_writer.writerows(data)
