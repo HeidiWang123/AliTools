@@ -232,8 +232,7 @@ class AliSpider():
             "rank_top1_product_id"       : top1_product['product_id'],
             "rank_top1_product_position" : top1_product['position'],
             "rank_product_position"      : current_product.get('position', None),
-            "is_selection_prodcut"  json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
-     : current_product.get('is_selection_prodcut', None) or top1_product.get('is_selection_prodcut', None)
+            "is_selection_prodcut"       : current_product.get('is_selection_prodcut', None) or top1_product.get('is_selection_prodcut', None)
         }
 
     def _parse_crawl_result(self, result):
@@ -258,7 +257,7 @@ class AliSpider():
             is_selection_prodcut = True if '搜索首页精选产品' in [x.text for x in charge_spans] else False
 
             search_results.append({
-                "product_id"          : product_id,
+                "product_id"          : int(product_id),
                 "position"            : product_rank,
                 "is_selection_prodcut": is_selection_prodcut
             })
