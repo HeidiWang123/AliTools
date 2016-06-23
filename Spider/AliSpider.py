@@ -320,7 +320,7 @@ if __name__ == '__main__':
             print(e.value)
         break
 
-    with open('./output.csv', 'w') as output_file:
+    with open('./output.csv', 'w', encoding='utf-8-sig') as output_file:
         headers = [
             ('keyword',                       '关键词'),
             ('product_owner',                 '负责人'),
