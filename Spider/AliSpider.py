@@ -13,16 +13,29 @@ import csv
 import os.path
 import ast
 
-def printProgress (iteration, total, prefix = '', suffix = '', decimals = 2, barLength = 50):
-    filledLength = int(round(barLength * iteration / float(total)))
-    percents     = round(100.00 * (iteration / float(total)), decimals)
-    bar          = '#' * filledLength + '-' * (barLength - filledLength)
-    sys.stdout.write('%s [%s] %.2f%s %s\r' % (prefix, bar, percents, '%', suffix)),
-    sys.stdout.flush()
-    if iteration == total:
-        print("\n")
-
 class AliSpider():
+    """
+    data schema
+    {
+        'product':{
+            'product_id': str,
+        }
+    }
+                ('keyword',                       '关键词'),
+                ('product_owner',                 '负责人'),
+                ('product_no',                    '产品编号'),
+                ('rank_product_position',         '产品排名'),
+                ('rank_top1_product_position',    '第一位排名'),
+                ('rank_top1_product_no',          '第一产品'),
+                ('is_selection_prodcut',          '搜索首页精选'),
+                ('is_ydt_product',                '贸易表现'),
+                ('is_window_product',             '橱窗'),
+                ('is_p4p_keyword',                'P4P'),
+                ('keyword_company_count',         '供应商竞争度'),
+                ('keyword_pv_rank',               '热搜度'),
+                ('keyword_window_products_count', '橱窗数')
+
+    """
     def __init__(self):
         self._decode_curls()
         self._build_sessions()
@@ -306,6 +319,15 @@ class AliSpider():
 
     def _delay(self):
         time.sleep(random.uniform(1, 10))
+
+def printProgress (iteration, total, prefix = '', suffix = '', decimals = 2, barLength = 50):
+    filledLength = int(round(barLength * iteration / float(total)))
+    percents     = round(100.00 * (iteration / float(total)), decimals)
+    bar          = '#' * filledLength + '-' * (barLength - filledLength)
+    sys.stdout.write('%s [%s] %.2f%s %s\r' % (prefix, bar, percents, '%', suffix)),
+    sys.stdout.flush()
+    if iteration == total:
+        print("\n")
 
 if __name__ == '__main__':
     spider = AliSpider()
