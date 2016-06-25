@@ -333,8 +333,8 @@ if __name__ == '__main__':
             ('is_window_product',             '橱窗'),
             ('is_p4p_keyword',                'P4P'),
             ('keyword_company_count',         '供应商竞争度'),
-            ('keyword_pv_rank',               '热搜度'),
-            ('keyword_window_products_count', '橱窗数')
+            ('keyword_window_products_count', '橱窗数'),
+            ('keyword_pv_rank',               '热搜度')
         ]
 
         dict_writer = csv.DictWriter(output_file, fieldnames = [x[0] for x in headers])
