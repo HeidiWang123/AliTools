@@ -2,3 +2,8 @@ Spider/config.ini
 Spider/data.dump
 Spider/output.csv
 Spider/*.log
+Spider/tmp/*
+Spider/csv/*
+Spider/__pycache__/*
+Spider/cookies.txt
+Spider/*.csv
