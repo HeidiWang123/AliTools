@@ -11,17 +11,25 @@ import ast
 
 class Spider(object):
     """docstring for AliSpider"""
-    def __init__(self):
-        self.session = self.create_session("./cookies.txt")
+    def __init__(self, cookies_file_path='config/cookies.txt'):
+        self.session = self.create_session(cookies_file_path)
 
     def generate_overvire():
+        """
+        生成所有产品的关键词款号以及排名的总表
+        """
         pass
 
     def generate_rank():
+        """
+        根据关键词列表抓取所有关键词的排名
+        """
         pass
 
     def generate_keywords(self, keyword, export_path='./csv/'):
-
+        """
+        查找给定关键词在热门搜索词中的结果并到处到 csv
+        """
         export_filename    = os.path.join( export_path, 'keywords', keyword + '.csv' )
         data_dump_filename = os.path.join( './tmp/keywords/',  keyword + '.dump' )
 
@@ -54,11 +62,11 @@ class Spider(object):
                 page_no += 1
         print(' done.')
 
-        headers = [
+        headers_info = [
             ("keywords",          "关键词"),
             ("company_cnt",       "卖家竞争度"),
             ("showwin_cnt",       "橱窗数"),
-            ("srh_pv_this_mon",   "搜索热度",
+            ("srh_pv_this_mon",   "搜索热度"),
             ("srh_pv_last_1mon",  self.months_ago_str(2)),
             ("srh_pv_last_2mon",  self.months_ago_str(3)),
             ("srh_pv_last_3mon",  self.months_ago_str(4)),
@@ -86,7 +94,7 @@ class Spider(object):
 
         with open(filename, 'w', encoding='utf-8-sig') as export_file:
             dict_writer = csv.DictWriter(export_file, fieldnames = [x[0] for x in headers_info])
-            dict_writer.writerow(dict(headers))
+            dict_writer.writerow(dict(headers_info))
             dict_writer.writerows(data)
 
     def read_dump_file(self, dump_filename):
@@ -95,7 +103,7 @@ class Spider(object):
             with open(dump_filename, 'r') as data_file:
                 keywords = [ast.literal_eval(x) for x in data_file.readlines() if x is not None]
 
-        return None
+        return []
 
     def create_session(self, cookies_file_path = "./cookies.txt"):
         s = requests.Session()
