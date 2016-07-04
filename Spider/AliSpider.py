@@ -64,11 +64,16 @@ class AliSpider():
         pattern_header  = re.compile(r"(?!Cookie)(?<=-H ')\S*: .+?(?=')")
         pattern_cookies = re.compile(r"(?<=-H 'Cookie: ).*(?=' -H)")
         pattern_data    = re.compile(r"(?<=--data ').*(?=')")
+
+        url     = pattern_url.findall(curl_command)
+        headers = pattern_header.findall(curl_command)
+        cookies = pattern_cookies.findall(curl_command)
+        data    = pattern_data.findall(curl_command)
         return {
-            "url"    : pattern_url.findall(curl_command)[0],
-            "headers": dict(x.split(': ', 1) for x in pattern_header.findall(curl_command)),
-            "cookies": dict(x.strip().split('=', 1) for x in pattern_cookies.findall(curl_command)[0].split(';')),
-            "data"   : dict(x.strip().split('=', 1) for x in pattern_data.findall(curl_command)[0].split('&'))
+            "url"    : url[0] if url is not None else None,
+            "headers": dict(x.split(': ', 1) for x in headers) if headers is not None else None,
+            "cookies": dict(x.strip().split('=', 1) for x in cookies) if cookies is not None else None,
+            "data"   : dict(x.strip().split('=', 1) for x in data) if data is not None else None
         }
 
     def get_data(self):
