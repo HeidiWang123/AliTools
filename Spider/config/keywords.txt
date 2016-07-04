@@ -1,0 +1,31 @@
+belt
+billfold
+bracelet
+briefcase
+case
+harness
+holder
+sleeve
+wallet
+bag
+handbag
+clutch
+tote
+satchel
+backpack
+saddlebag
+purse
+pouch
+key ring
+key chain
+key fob
+bangle
+wrist strap
+wrist ring
+wrist band
+wristband
+leash
+collar
+leather bookmark
+button
+organizer
