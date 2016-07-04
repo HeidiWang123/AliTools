@@ -7,3 +7,4 @@ Spider/csv/*
 Spider/__pycache__/*
 Spider/cookies.txt
 Spider/*.csv
+Spoder/config/*.txt
