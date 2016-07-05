@@ -1,18 +1,23 @@
-import requests
 import time
 import random
-from datetime import datetime
-from http.cookiejar import MozillaCookieJar
-from dateutil.relativedelta import relativedelta
 import os
 import csv
 import sys
 import ast
+import re
+import json
+from datetime import datetime
+from http.cookiejar import MozillaCookieJar
+from dateutil.relativedelta import relativedelta
+import requests
+from bs4 import BeautifulSoup
 
 class Spider(object):
     """docstring for AliSpider"""
-    def __init__(self, cookies_file_path='config/cookies.txt'):
-        self.session = self.create_session(cookies_file_path)
+    def __init__(self, cookies_file_path='config/cookies.txt', dump_path='./tmp/'):
+        self.session   = self.create_session(cookies_file_path)
+        os.makedirs(os.path.dirname(dump_path), exist_ok=True)
+        self.dump_path = dump_path
 
     def generate_overvire():
         """
@@ -20,32 +25,68 @@ class Spider(object):
         """
         pass
 
-    def generate_rank():
+    def generate_rank(self, keywords, product_no=None, export_path="./csv/"):
         """
         根据关键词列表抓取所有关键词的排名
         """
-        pass
+        export_filename = os.path.join(export_path, 'rank.csv')
+        dump_filename   = os.path.join(self.dump_path, 'rank.dump')
+        data            = self.read_dump_file(dump_filename)
+        exist_keywords  = [x['keyword'] for x in data]
+
+        with open(dump_filename, 'a') as df:
+            for keyword in keywords:
+                keyword = keyword.strip()
+                if keyword not in exist_keywords:
+                    rank_info = self.get_keyword_rank(keyword)
+                    product_rank = None
+                    if product_no is not None:
+                        for info_item in rank_info:
+                            if info_item['product_no'] == product_no:
+                                product_rank = info_item['product_rank']
+                                break
+                    item = {
+                        "keyword":      keyword,
+                        "product_no":   product_no,
+                        "product_rank": product_rank,
+                        "top1_rank":    rank_info[0]['product_rank'] if rank_info is not None else None,
+                        "top1_no":      rank_info[0]['product_no'] if rank_info is not None else None
+                    }
+                    data.append(item)
+                    df.write("%s\n" % item)
+                    df.flush()
+                print('[%s] done' % keyword)
+
+        headers_info = [
+            ("keyword",      "关键词"),
+            ("product_no",   "款号"),
+            ("product_rank", "产品排名"),
+            ("top1_rank",    "第一位排名"),
+            ("top1_no",      "第一位产品")
+        ]
+        self.dict_writer(filename=export_filename, headers_info=headers_info, data_list=data)
+
 
     def generate_keywords(self, keyword, export_path='./csv/'):
         """
         查找给定关键词在热门搜索词中的结果并到处到 csv
         """
-        export_filename    = os.path.join( export_path, 'keywords', keyword + '.csv' )
-        data_dump_filename = os.path.join( './tmp/keywords/',  keyword + '.dump' )
+        export_filename = os.path.join( export_path, 'keywords', keyword + '.csv' )
+        dump_filename   = os.path.join(self.dump_path, 'keywords',  keyword + '.dump' )
 
         os.makedirs(os.path.dirname(export_filename), exist_ok=True)
-        os.makedirs(os.path.dirname(data_dump_filename), exist_ok=True)
+        os.makedirs(os.path.dirname(dump_filename), exist_ok=True)
 
         if os.path.isfile(export_filename):
             print('[%s] done' % keyword)
             return
 
-        keywords = self.read_dump_file(data_dump_filename)
+        keywords = self.read_dump_file(dump_filename)
 
         page_size = 10
         page_no = int(len(keywords) / page_size) + 1
 
-        with open(data_dump_filename, 'a') as dump_file:
+        with open(dump_filename, 'a') as dump_file:
             while True:
                 l = self.search_keywords(keyword, page_no=page_no, page_size=page_size)
                 if l is None or len(keywords) == l.get('total', None):
@@ -98,12 +139,12 @@ class Spider(object):
             dict_writer.writerows(data)
 
     def read_dump_file(self, dump_filename):
-
+        data = []
         if os.path.isfile(dump_filename):
             with open(dump_filename, 'r') as data_file:
-                keywords = [ast.literal_eval(x) for x in data_file.readlines() if x is not None]
+                data = [ast.literal_eval(x) for x in data_file.readlines() if x is not None]
 
-        return []
+        return data
 
     def create_session(self, cookies_file_path = "./cookies.txt"):
         s = requests.Session()
@@ -128,6 +169,13 @@ class Spider(object):
         return s
 
     def search_keywords(self, keyword, page_no=1, page_size=10):
+        self.session.headers.update({
+        'Host':             'hz-mydata.alibaba.com',
+        'Content-Type':     'application/x-www-form-urlencoded; charset=UTF-8',
+        'X-Requested-With': 'XMLHttpRequest',
+        'Referer':          'http://hz-mydata.alibaba.com/industry/keywords.htm'
+        })
+
         api_url = "http://hz-mydata.alibaba.com/industry/.json?action=CommonAction&iName=searchKeywords"
         request_data = {
             'keywords':   keyword,
@@ -136,12 +184,6 @@ class Spider(object):
             'orderBy':    'srh_pv_this_mon',
             'orderModel': 'desc'
         }
-        self.session.headers.update({
-            'Host':             'hz-mydata.alibaba.com',
-            'Content-Type':     'application/x-www-form-urlencoded; charset=UTF-8',
-            'X-Requested-With': 'XMLHttpRequest',
-            'Referer':          'http://hz-mydata.alibaba.com/industry/keywords.htm'
-        })
         rsp = self.session.post( api_url, data = request_data ).json()
         result = None
         if rsp.get('successed', False):
@@ -153,6 +195,66 @@ class Spider(object):
     def months_ago_str(self, months):
         time = datetime.now() - relativedelta(months=months)
         return time.strftime('%y年%m月搜索热度')
+
+    def get_keyword_rank(self, keyword):
+        self.session.headers.update({
+            'Host':         'hz-productposting.alibaba.com',
+            'Accept':       'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+            'Content-Type': 'application/x-www-form-urlencoded'
+        })
+
+        api_url = "http://hz-productposting.alibaba.com/product/ranksearch/rankSearch.htm"
+        request_data = {
+            '_csrf_token_': self.get_csrf_token(api_url),
+            'queryString':  keyword
+        }
+        html = self.session.post(api_url, data = request_data).text
+        return self.parse_rank(html)
+
+    def parse_rank(self, html):
+        soup = BeautifulSoup(html, 'html.parser')
+        rows = soup.select('#rank-searech-table > tbody > tr')
+        tips = soup.select('.search-result')
+
+        if '查询太频繁，请明日再试！' in str(tips):
+            raise RuntimeError('查询太频繁，请明日再试！')
+
+        if '无匹配结果' in str(rows):
+            return None
+
+        results = list()
+        for row in rows:
+            self.delay()
+
+            product_href = "http:" + row.select('td:nth-of-type(1) > a')[0].get('href')
+            rt           = self.session.get(product_href).text
+            match_str    = re.findall(r'(?<=attrData.systemAttr = ).*(?=;)', rt)[0]
+            attr_data    = json.loads(match_str)
+            product_no   = ""
+            for item in attr_data:
+                if item['data']['value'] == '型号':
+                    product_no = item['nodes'][0]['data']['value']
+
+            rank_text    = row.select('td:nth-of-type(2) > a')[0].text.strip()
+            product_rank = (lambda x: round(float(x[0]) + float(x[1])/100, 2))(re.findall(r'(\d+)', rank_text))
+
+            charge_spans      = row.select('td:nth-of-type(3) > span')
+            selection_prodcut = True if '搜索首页精选产品' in [x.text for x in charge_spans] else False
+
+            results.append({
+                'product_no':        product_no,
+                'product_rank':      product_rank,
+                'selection_prodcut': selection_prodcut
+            })
+
+        return sorted(results, key=lambda x:x['product_rank'])
+
+    def get_csrf_token(self, url):
+        self.delay()
+        html = self.session.get(url).text
+        soup = BeautifulSoup(html, 'html.parser')
+        value = soup.find('input', {'name': '_csrf_token_'}).get('value')
+        return value
 
     def query_products_list(self):
         pass
