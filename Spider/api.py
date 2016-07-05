@@ -13,7 +13,25 @@ import requests
 from bs4 import BeautifulSoup
 
 class Spider(object):
-    """docstring for AliSpider"""
+    """
+    数据结构
+    {
+        keyword:              关键词,
+        product_owner:        负责人,
+        product_no:           款号,
+        product_rank:         排名,
+        update_time:          更新日期,
+        top1_rank:            第一位排名,
+        top1_no:              第一位款号,
+        is_selection_prodcut: 搜索首页精选产品,
+        is_ydt_product:       贸易表现产品,
+        is_window_product:    橱窗,
+        isP4pKeyword:         P4P关键词,
+        company_cnt:          卖家竞争度,
+        showwin_cnt:          橱窗数,
+        srh_pv_this_mon:      搜索热度
+    }
+    """
     def __init__(self, cookies_file_path='config/cookies.txt', dump_path='./tmp/'):
         self.session   = self.create_session(cookies_file_path)
         os.makedirs(os.path.dirname(dump_path), exist_ok=True)
@@ -23,7 +41,31 @@ class Spider(object):
         """
         生成所有产品的关键词款号以及排名的总表
         """
-        pass
+        export_filename = os.path.join(export_path, 'overview.csv')
+        dump_filename   = os.path.join(self.dump_path, 'overview.dump')
+        data            = self.read_dump_file(dump_filename)
+        exist_product   = set([x['product_no'] for x in data])
+
+        with open(dump_filename, 'a') as df:
+            self.crawl_overview(data, df)
+
+        headers_info = [
+            ('keyword',              '关键词'),
+            ('product_owner',        '负责人'),
+            ('product_no',           '款号'),
+            ('product_rank',         '排名'),
+            ('update_time',          '更新日期'),
+            ('top1_rank',            '第一位排名'),
+            ('top1_no',              '第一位款号'),
+            ('is_selection_prodcut', '搜索首页精选产品'),
+            ('is_ydt_product',       '贸易表现产品'),
+            ('is_window_product',    '橱窗'),
+            ('isP4pKeyword',         'P4P关键词'),
+            ('company_cnt',          '卖家竞争度'),
+            ('showwin_cnt',          '橱窗数'),
+            ('srh_pv_this_mon',      '搜索热度')
+        ]
+        self.dict_writer(filename=export_filename, headers_info=headers_info, data_list=data)
 
     def generate_rank(self, keywords, product_no=None, export_path="./csv/"):
         """
@@ -83,24 +125,14 @@ class Spider(object):
 
         keywords = self.read_dump_file(dump_filename)
 
-        page_size = 10
         page_no = int(len(keywords) / page_size) + 1
 
         with open(dump_filename, 'a') as dump_file:
-            while True:
-                l = self.search_keywords(keyword, page_no=page_no, page_size=page_size)
-                if l is None or len(keywords) == l.get('total', None):
-                    break
-
-                data = l.get('data', None)
-                for data_item in data:
-                    dump_file.write("%s\n" % data_item)
-                dump_file.flush()
-                keywords.extend(data)
-
-                sys.stdout.write('\r[%s] %d - %d' % (keyword, len(keywords), l['total']))
-                sys.stdout.flush()
-                page_no += 1
+            data = self.search_keywords(keyword, page_no=page_no)
+            for data_item in data:
+                dump_file.write("%s\n" % data_item)
+            dump_file.flush()
+            keywords.extend(data)
         print(' done.')
 
         headers_info = [
@@ -168,6 +200,58 @@ class Spider(object):
 
         return s
 
+    def crawl_overview(self, data, dump_file, page=1):
+        api_url = "http://hz-productposting.alibaba.com/product/managementproducts/asyQueryProductsList.do"
+        self.session.headers.update({
+            'Host':             'hz-productposting.alibaba.com',
+            'Accept':           'application/json, text/javascript, */*; q=0.01',
+            'Content-Type':     'application/x-www-form-urlencoded',
+            'X-Requested-With': 'XMLHttpRequest'
+        })
+        page_size = 50
+        request_data = {
+            '_csrf_token_':   self.get_csrf_token('http://hz-productposting.alibaba.com/product/products_manage.htm'),
+            'page':           page,
+            'status':         'approved',
+            'size':           str(page_size),
+            'statisticsType': 'month',
+            'imageType':      'all',
+            'displayStatus':  'all',
+            'repositoryType': 'all',
+            'samplingTag':    'false',
+            'marketType':     'all'
+        }
+        self.delay()
+        rsp = self.session.post(api_url, data = request_data).json()
+
+        exist_products  = [x['redModel'] for x in data]
+        exist_keywords = [x['keyword'] for x in data]
+
+        if rsp is not None and rsp.get('result') is True:
+            products     = rsp.get('products', list())
+            if item in products:
+                keywords   = products.get('keywords')
+                product_no = products.get('redModel')
+                item_list  = list()
+                for keyword in keywords:
+                    if keyword not in exist_keywords and product_no not in exist_products:
+                        search_keywords = self.search_keywords(keyword)
+                        keyword_info    = [x for x in search_keywords if x['keywords'] == keyword][0]
+                        rank_info       = self.get_keyword_rank(keyword, product_no)
+
+                        record = dict()
+                        record.update(item)
+                        record.update(keyword_info)
+                        record.update(rank_info)
+
+                        item_list.append(record)
+                        dump_file.write('%s\n' % record)
+                        dump_file.flush()
+                    print("\r [%s - %s] done" % (product_no, keyword))
+                data.extend(item_list)
+            if len(products) == page_size:
+                self.crawl_overview(data, dump_file, page_no + 1)
+
     def search_keywords(self, keyword, page_no=1, page_size=10):
         self.session.headers.update({
         'Host':             'hz-mydata.alibaba.com',
@@ -184,13 +268,17 @@ class Spider(object):
             'orderBy':    'srh_pv_this_mon',
             'orderModel': 'desc'
         }
-        rsp = self.session.post( api_url, data = request_data ).json()
-        result = None
-        if rsp.get('successed', False):
-            result = rsp.get('value', None)
-
         self.delay()
-        return result
+        rsp = self.session.post( api_url, data = request_data ).json()
+        if rsp is not None and rsp.get['successed']:
+            result = rsp.get['value']['data']
+
+            sys.stdout.write('\r[%s] %d - %d' % (keyword, len(keywords), rsp['value']['total']))
+            sys.stdout.flush()
+
+            if len(result) == page_size:
+                result.extend( self.search_keywords(keyword, page_no+1) )
+            return result
 
     def months_ago_str(self, months):
         time = datetime.now() - relativedelta(months=months)
@@ -250,17 +338,14 @@ class Spider(object):
         return sorted(results, key=lambda x:x['product_rank'])
 
     def get_csrf_token(self, url):
-        self.delay()
-        html = self.session.get(url).text
-        soup = BeautifulSoup(html, 'html.parser')
-        value = soup.find('input', {'name': '_csrf_token_'}).get('value')
-        return value
-
-    def query_products_list(self):
-        pass
-
-    def rank_search(self):
-        pass
+        if self._crsf_url is None:
+            self._crsf_url = url
+        elif self._crsf_url != url:
+            self.delay()
+            html = self.session.get(url).text
+            soup = BeautifulSoup(html, 'html.parser')
+            self._crsf_token = soup.find('input', {'name': '_csrf_token_'}).get('value')
+        return self._crsf_token
 
     def delay(self, seconds=10):
         time.sleep(random.uniform(1, seconds))
