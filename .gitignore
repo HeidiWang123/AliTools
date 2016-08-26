@@ -1,4 +1,5 @@
-Spider/config.ini
-Spider/data.dump
-Spider/output.csv
-Spider/*.log
+*.log
+*.pkl
+Spider/database/*
+Spider/__pycache__/*
+Spider/tests/*
