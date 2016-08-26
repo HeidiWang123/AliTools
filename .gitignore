@@ -2,4 +2,4 @@ Spider/database/*
 *.log
 *.pkl
 Spider/__pycache__/*
-test/*
+tests/*
