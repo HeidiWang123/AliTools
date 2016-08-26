@@ -1,6 +1,7 @@
 import math
 import datetime
 from models import Product
+from spider import ProductSpider
 
 def parse_product(response):
     json = response.json()
@@ -11,7 +12,7 @@ def parse_product(response):
         products.append(product)
 
     current_page = json['currentPage']
-    page_size = len(json_products)
+    page_size = ProductSpider.PAGE_SIZE
     products_count = json['count']
     new_page = _get_next_page(current_page, page_size, products_count)
 
@@ -33,8 +34,9 @@ def _product_from_json(json_item):
 def _get_next_page(page, size, count):
     next_page = None
 
+    print(count, size)
     page_count = math.ceil(count/size)
-    if page_count > page + 1:
+    if page_count > page:
         next_page = page + 1
 
     return next_page

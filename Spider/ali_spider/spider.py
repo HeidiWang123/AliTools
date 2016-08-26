@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import re
 import sys
 import time
@@ -87,6 +89,7 @@ class ProductSpider(Spider):
     """docstring for ProductSpider."""
 
     _csrf_token = None
+    PAGE_SIZE = 50;
 
     def _get_csrf_token(self):
         """获取 csrf_token 值"""
@@ -108,7 +111,7 @@ asyQueryProductsList.do"
             '_csrf_token_': self._get_csrf_token(),
             'status': 'approved',
             'page': str(page),
-            'size': '50',
+            'size': str(ProductSpider.PAGE_SIZE),
             'statisticsType': 'month',
             'imageType': 'all',
             'displayStatus': 'all',
@@ -129,7 +132,7 @@ asyQueryProductsList.do"
 
     def craw(self):
         """开始抓取"""
-        start_page = 15
+        start_page = 1
         new_request = self._prepare_request(start_page)
         self.manager.add_request(new_request)
 
