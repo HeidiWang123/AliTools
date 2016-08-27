@@ -1,5 +1,5 @@
 *.log
 *.pkl
 Spider/database/*
-__pycache__/*
+Spider/**/__pycache__/*
 Spider/tests/*
