@@ -1,5 +1,6 @@
 *.log
 *.pkl
+*.db
 Spider/database/*
 **/__pycache__/*
 Spider/tests/*
