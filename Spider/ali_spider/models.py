@@ -19,8 +19,6 @@ class Product(Base):
     is_trade_product = Column('is_trade_product', Boolean)
     is_window_product = Column('is_window_product', Boolean)
 
-    rank = relationship("Rank")
-
 class Keyword(Base):
     """docstring for Keyword."""
 
@@ -33,20 +31,13 @@ class Keyword(Base):
     update = Column('update', Date)
     is_p4p_keyword = Column('is_p4p_keyword', Boolean)
 
-    rank = relationship("Rank")
-
 class Rank(Base):
     """docstring for Rank."""
 
     __tablename__ = "rank"
 
-    id = Column('id', Integer, primary_key=True)
-    keyword_value = Column('keyword_value', String, ForeignKey('keywords.value'))
-    product_id = Column('product_id', Integer, ForeignKey('products.id'))
-    ranking = Column('ranking', Integer)
-
-    keyword = relationship('Keyword', back_populates="rank")
-    product = relationship('Product', back_populates="rank")
+    keyword = Column('keyword_value', String, primary_key=True)
+    ranking = Column('ranking', String)
 
 class Database():
     session = None
@@ -57,20 +48,47 @@ class Database():
         if Database.session is not None:
             return
 
-        engine = create_engine('sqlite:///./database/data.db', echo=True)
+        engine = create_engine('sqlite:///./database/data.db', echo=False)
         Base.metadata.create_all(engine)
         Session = sessionmaker(bind=engine)
         Database.session = Session()
 
-    def add_products(self, products):
+    def upsert_products(self, products):
+        if products is None or len(products) == 0:
+            return
         self.session.add_all(products)
         self.session.commit()
+
+    def upsert_rank(self, rank):
+        if rank is None:
+            return
+        self.session.add(rank)
+        self.session.commit()
+
+    def upsert_keywords(self, keywords):
+        if keywords is None or len(keywords) == 0:
+            return
+        for keyword in keywords:
+            record = self.session.query(Keyword).filter_by(value=keyword.value).first()
+            if record is not None:
+                record = keyword
+            else:
+                self.session.add(keyword)
+        self.session.commit()
+
+    def keyword_exsit_unneed_update(self, keyword):
+        record = self.session.query(Keyword).filter_by(value=keyword).first()
+        if record is None:
+            return False
+        else:
+            # TODO: 太平洋时间每月 3 日 9 点更新
+            return True
 
     def get_product_keywords(self):
         keywords = set()
         for keyword in self.session.query(Product.keywords):
-            keywords.update(keyword.split(','))
-        return keywords
+            keywords.update(map(str.strip, keyword[0].split(',')))
+        return sorted(list(keywords))
 
     def close(self):
         self.session.commit()
