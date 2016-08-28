@@ -1,4 +1,5 @@
-from sqlalchemy import Integer, String, Date, Boolean
+import datetime
+from sqlalchemy import Integer, String, Date, DateTime, Boolean
 from sqlalchemy import Column, create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
@@ -28,7 +29,7 @@ class Keyword(Base):
     repeat_keyword = Column('repeat_keyword', String)
     company_cnt = Column('company_cnt', Integer)
     srh_pv = Column('srh_pv', String)
-    update = Column('update', Date)
+    update = Column('update', DateTime(timezone=True))
     is_p4p_keyword = Column('is_p4p_keyword', Boolean)
 
 class Rank(Base):
@@ -38,6 +39,10 @@ class Rank(Base):
 
     keyword = Column('keyword_value', String, primary_key=True)
     ranking = Column('ranking', String)
+    update = Column('update', Date)
+
+    def __init__(self):
+        self.update = datetime.date.today()
 
 class Database():
     session = None
@@ -76,11 +81,10 @@ class Database():
 
     def rank_exsit_unneed_update(self, keyword):
         record = self.session.query(Rank).filter_by(keyword=keyword).first()
-        if record is None:
+        if record is None or record.update == datetime.date.today():
+            # 如果是同一天的，就不用更新了
             return False
-        else:
-            # TODO: 太平洋时间每月 3 日 9 点更新
-            return True
+        return True
 
     def keyword_exsit_unneed_update(self, keyword):
         record = self.session.query(Keyword).filter_by(value=keyword).first()
