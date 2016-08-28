@@ -39,10 +39,7 @@ class Rank(Base):
 
     keyword = Column('keyword_value', String, primary_key=True)
     ranking = Column('ranking', String)
-    update = Column('update', Date)
-
-    def __init__(self):
-        self.update = datetime.date.today()
+    update = Column('update', Date, default=datetime.date.today())
 
 class Database():
     session = None

@@ -77,24 +77,31 @@ def parse_keyword(response, page, page_size, negative_keywords):
         value = item['keywords']
         if value in negative_keywords:
             continue
-        keyword = Keyword(value=item['keywords'],
-                          repeat_keyword=item.get('repeatKeyword', None),
-                          company_cnt=item['company_cnt'],
-                          update=datetime.strptime(item['yyyymm']+'03', '%Y%m%d'),
-                          is_p4p_keyword=item['isP4pKeyword'],
-                          srh_pv=json.dumps({'srh_pv_this_mon': item['srh_pv_this_mon'],
-                                             'srh_pv_last_1mon': item['srh_pv_last_1mon'],
-                                             'srh_pv_last_2mon': item['srh_pv_last_2mon'],
-                                             'srh_pv_last_3mon': item['srh_pv_last_3mon'],
-                                             'srh_pv_last_4mon': item['srh_pv_last_4mon'],
-                                             'srh_pv_last_5mon': item['srh_pv_last_5mon'],
-                                             'srh_pv_last_6mon': item['srh_pv_last_6mon'],
-                                             'srh_pv_last_7mon': item['srh_pv_last_7mon'],
-                                             'srh_pv_last_8mon': item['srh_pv_last_8mon'],
-                                             'srh_pv_last_9mon': item['srh_pv_last_9mon'],
-                                             'srh_pv_last_10mon': item['srh_pv_last_10mon'],
-                                             'srh_pv_last_11mon': item['srh_pv_last_11mon'],
-                                            }))
+        value = item['keywords']
+        repeat_keyword = item.get('repeatKeyword', None)
+        company_cnt = item['company_cnt']
+        update = datetime.strptime(item['yyyymm']+'03', '%Y%m%d')
+        is_p4p_keyword = item['isP4pKeyword']
+        srh_pv = json.dumps({'srh_pv_this_mon': item['srh_pv_this_mon'],
+                             'srh_pv_last_1mon': item['srh_pv_last_1mon'],
+                             'srh_pv_last_2mon': item['srh_pv_last_2mon'],
+                             'srh_pv_last_3mon': item['srh_pv_last_3mon'],
+                             'srh_pv_last_4mon': item['srh_pv_last_4mon'],
+                             'srh_pv_last_5mon': item['srh_pv_last_5mon'],
+                             'srh_pv_last_6mon': item['srh_pv_last_6mon'],
+                             'srh_pv_last_7mon': item['srh_pv_last_7mon'],
+                             'srh_pv_last_8mon': item['srh_pv_last_8mon'],
+                             'srh_pv_last_9mon': item['srh_pv_last_9mon'],
+                             'srh_pv_last_10mon': item['srh_pv_last_10mon'],
+                             'srh_pv_last_11mon': item['srh_pv_last_11mon'],
+                            })
+        keyword = Keyword(value=value,
+                          srh_pv=srh_pv,
+                          update=update,
+                          company_cnt=company_cnt,
+                          repeat_keyword=repeat_keyword,
+                          is_p4p_keyword=is_p4p_keyword
+                         )
         keywords.append(keyword)
 
     return next_page, keywords
