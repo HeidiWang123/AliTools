@@ -1,6 +1,6 @@
 from sqlalchemy import Integer, String, Date, Boolean
-from sqlalchemy import Column, ForeignKey, create_engine
-from sqlalchemy.orm import relationship, sessionmaker
+from sqlalchemy import Column, create_engine
+from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 
 Base = declarative_base()
@@ -10,7 +10,7 @@ class Product(Base):
 
     __tablename__ = "products"
 
-    id = Column('id', Integer, primary_key=True, autoincrement=False)
+    id = Column('id', Integer, primary_key=True, autoincrement=True)
     style_no = Column('style_no', String)
     title = Column('title', String)
     keywords = Column('keywords', String)
@@ -42,16 +42,10 @@ class Rank(Base):
 class Database():
     session = None
     def __init__(self):
-        self._init_db()
-
-    def _init_db(self):
-        if Database.session is not None:
-            return
-
         engine = create_engine('sqlite:///./database/data.db', echo=False)
         Base.metadata.create_all(engine)
         Session = sessionmaker(bind=engine)
-        Database.session = Session()
+        self.session = Session()
 
     def upsert_products(self, products):
         if products is None or len(products) == 0:
@@ -62,7 +56,11 @@ class Database():
     def upsert_rank(self, rank):
         if rank is None:
             return
-        self.session.add(rank)
+        record = self.session.query(Rank).filter_by(keyword=rank.keyword).first()
+        if record is not None:
+            record = rank
+        else:
+            self.session.add(rank)
         self.session.commit()
 
     def upsert_keywords(self, keywords):
@@ -75,6 +73,14 @@ class Database():
             else:
                 self.session.add(keyword)
         self.session.commit()
+
+    def rank_exsit_unneed_update(self, keyword):
+        record = self.session.query(Rank).filter_by(keyword=keyword).first()
+        if record is None:
+            return False
+        else:
+            # TODO: 太平洋时间每月 3 日 9 点更新
+            return True
 
     def keyword_exsit_unneed_update(self, keyword):
         record = self.session.query(Keyword).filter_by(value=keyword).first()

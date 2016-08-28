@@ -1,7 +1,6 @@
 """爬虫模块
 """
 
-import os.path
 import re
 import sys
 import time
@@ -66,7 +65,7 @@ class Spider():
 
             new_request = keyword_manager.get_request()
             if self.db.keyword_exsit_unneed_update(keyword):
-                print('keyword %s is existed in database, ignored' % keyword)
+                print('keyword %s is already in database, ignored' % keyword)
                 page = None
             else:
                 response = self.session.send(new_request)
@@ -87,6 +86,7 @@ class Spider():
 
     def craw_rank(self, index=0):
         keywords = self.get_keywords()
+        keyword = keywords[index]
         csrf_token = self._get_product_csrf_token()
         manager = RequestManager()
 
@@ -94,21 +94,26 @@ class Spider():
             print('index over range')
             return
 
-        first_request = self._prepare_rank_request(csrf_token = csrf_token, keyword = keywords[index])
+        first_request = self._prepare_rank_request(csrf_token=csrf_token, keyword=keyword)
         manager.add_request(first_request)
 
         while manager.has_request():
-            print("\r[RankSpider] - %d:[%s]" % (index, keywords[index]))
+            print("\r[RankSpider] - %d:[%s]" % (index, keyword))
 
-            new_request = manager.get_request()
-            response = self.session.send(new_request)
-            index, rank = parser.parse_rank(response, index, keywords)
-            self.db.upsert_rank(rank)
+            if self.db.rank_exsit_unneed_update(keyword):
+                print('done [record is exist]')
+                index += 1
+            else:
+                new_request = manager.get_request()
+                response = self.session.send(new_request)
+                index, rank = parser.parse_rank(response, index, keywords)
+                self.db.upsert_rank(rank)
+                print("done")
 
-            print("done")
-            if index is None:
+            if index is None or index >= len(keywords):
                 break
-            new_request = self._prepare_rank_request(csrf_token = csrf_token, keyword = keywords[index])
+            keyword = keywords[index]
+            new_request = self._prepare_rank_request(csrf_token = csrf_token, keyword=keyword)
             manager.add_request(new_request)
 
     def _prepare_products_request(self, csrf_token, page, page_size):
@@ -209,7 +214,7 @@ class Spider():
 
     def _get_cookies(self):
         cookies = None
-        dump_file = os.path.abspath(os.path.join(os.path.dirname(__file__),'cookies.pkl'))
+        dump_file = 'cookies.pkl'
         try:
             with open(dump_file, "rb") as dump:
                 cookies = pickle.load(dump)

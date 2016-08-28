@@ -39,7 +39,6 @@ def parse_rank(response, index, keywords):
     if '无匹配结果' in str(rows):
         return next_index, None
 
-    print("into get rank")
     ranking = list()
     for row in rows:
         product_href = row.select('td:nth-of-type(1) > a')[0].get('href')
