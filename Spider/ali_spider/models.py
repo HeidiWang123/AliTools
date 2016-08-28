@@ -1,8 +1,9 @@
-import datetime
+from datetime import datetime, date
 from sqlalchemy import Integer, String, Date, DateTime, Boolean
 from sqlalchemy import Column, create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
+from tzlocal import get_localzone
 
 Base = declarative_base()
 
@@ -29,7 +30,7 @@ class Keyword(Base):
     repeat_keyword = Column('repeat_keyword', String)
     company_cnt = Column('company_cnt', Integer)
     srh_pv = Column('srh_pv', String)
-    update = Column('update', DateTime(timezone=True))
+    update = Column('update', DateTime)
     is_p4p_keyword = Column('is_p4p_keyword', Boolean)
 
 class Rank(Base):
@@ -39,7 +40,7 @@ class Rank(Base):
 
     keyword = Column('keyword_value', String, primary_key=True)
     ranking = Column('ranking', String)
-    update = Column('update', Date, default=datetime.date.today())
+    update = Column('update', Date, default=date.today())
 
 class Database():
     session = None
@@ -78,17 +79,24 @@ class Database():
 
     def rank_exsit_unneed_update(self, keyword):
         record = self.session.query(Rank).filter_by(keyword=keyword).first()
-        if record is None or record.update == datetime.date.today():
+        if record is None or record.update == date.today():
             # 如果是同一天的，就不用更新了
             return False
-        return True
+        else:
+            return True
 
     def keyword_exsit_unneed_update(self, keyword):
         record = self.session.query(Keyword).filter_by(value=keyword).first()
-        if record is None:
+        if record is None or self._is_date_update_keyword(record.update):
             return False
         else:
-            # TODO: 太平洋时间每月 3 日 9 点更新
+            return True
+
+    def _is_date_update_keyword(self, update):
+        next_month = update.replace(month=update.month+1)
+        if next_month > datetime.now(get_localzone()):
+            return False
+        else:
             return True
 
     def get_product_keywords(self):

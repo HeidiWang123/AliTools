@@ -62,6 +62,8 @@ def parse_rank(response, index, keywords):
     return next_index, rank
 
 def parse_keyword(response, page, page_size, negative_keywords):
+    """keyword 解析器
+    """
 
     resp_json = response.json()
     resp_keywords = resp_json['value']['data']
@@ -80,7 +82,7 @@ def parse_keyword(response, page, page_size, negative_keywords):
         value = item['keywords']
         repeat_keyword = item.get('repeatKeyword', None)
         company_cnt = item['company_cnt']
-        update = datetime.strptime(item['yyyymm']+'03', '%Y%m%d')
+        update = datetime.strptime(item['yyyymm']+'03 09:00:00-08:00', '%Y%m%d %H:%M:%S%z')
         is_p4p_keyword = item['isP4pKeyword']
         srh_pv = json.dumps({'srh_pv_this_mon': item['srh_pv_this_mon'],
                              'srh_pv_last_1mon': item['srh_pv_last_1mon'],
