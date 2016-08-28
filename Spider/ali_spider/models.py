@@ -1,6 +1,7 @@
+import json
 from datetime import datetime, date
 from sqlalchemy import Integer, String, Date, DateTime, Boolean
-from sqlalchemy import Column, create_engine
+from sqlalchemy import Column, create_engine, func
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 from tzlocal import get_localzone
@@ -29,6 +30,7 @@ class Keyword(Base):
     value = Column('value', String, primary_key=True)
     repeat_keyword = Column('repeat_keyword', String)
     company_cnt = Column('company_cnt', Integer)
+    showwin_cnt = Column('showwin_cnt', Integer)
     srh_pv = Column('srh_pv', String)
     update = Column('update', DateTime)
     is_p4p_keyword = Column('is_p4p_keyword', Boolean)
@@ -40,7 +42,7 @@ class Rank(Base):
 
     keyword = Column('keyword_value', String, primary_key=True)
     ranking = Column('ranking', String)
-    update = Column('update', Date, default=date.today())
+    update = Column('update', Date, default=func.now())
 
 class Database():
     session = None
@@ -104,6 +106,21 @@ class Database():
         for keyword in self.session.query(Product.keywords):
             keywords.update(map(str.strip, keyword[0].split(',')))
         return sorted(list(keywords))
+
+    def get_products(self):
+        return self.session.query(Product).all()
+
+    def get_keyword_ranking(self, keyword):
+        ranking = None
+        rank = self.session.query(Rank).filter_by(keyword=keyword).first()
+        if rank is None:
+            return ranking
+        ranking = json.loads(rank.ranking)
+        return ranking
+
+    def get_keyword(self, value):
+        keyword = self.session.query(Keyword).filter_by(value=value).first()
+        return keyword
 
     def close(self):
         self.session.commit()

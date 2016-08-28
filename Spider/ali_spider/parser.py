@@ -82,7 +82,8 @@ def parse_keyword(response, page, page_size, negative_keywords):
         value = item['keywords']
         repeat_keyword = item.get('repeatKeyword', None)
         company_cnt = item['company_cnt']
-        update = datetime.strptime(item['yyyymm']+'03 09:00:00-08:00', '%Y%m%d %H:%M:%S%z')
+        showwin_cnt = item['showwin_cnt']
+        update = datetime.strptime(item['yyyymm']+'03 09:00:00-0800', '%Y%m%d %H:%M:%S%z')
         is_p4p_keyword = item['isP4pKeyword']
         srh_pv = json.dumps({'srh_pv_this_mon': item['srh_pv_this_mon'],
                              'srh_pv_last_1mon': item['srh_pv_last_1mon'],
@@ -101,6 +102,7 @@ def parse_keyword(response, page, page_size, negative_keywords):
                           srh_pv=srh_pv,
                           update=update,
                           company_cnt=company_cnt,
+                          showwin_cnt=showwin_cnt,
                           repeat_keyword=repeat_keyword,
                           is_p4p_keyword=is_p4p_keyword
                          )
