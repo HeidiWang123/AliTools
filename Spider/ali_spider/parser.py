@@ -4,7 +4,7 @@
 import re
 import math
 import json
-from datetime import datetime
+from datetime import datetime, date
 from models import Product, Rank, Keyword
 from bs4 import BeautifulSoup
 
@@ -58,7 +58,7 @@ def parse_rank(response, index, keywords):
                         'is_p4p': is_p4p,
                         'is_window': is_window})
 
-    rank = Rank(keyword=keywords[index], ranking=json.dumps(ranking))
+    rank = Rank(keyword=keywords[index], ranking=json.dumps(ranking), update=date.today())
     return next_index, rank
 
 def parse_keyword(response, page, page_size, negative_keywords):

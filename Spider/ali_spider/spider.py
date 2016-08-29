@@ -50,8 +50,8 @@ class Spider():
             next_request = self._prepare_products_request(csrf_token=csrf_token, page=page, page_size=page_size)
             manager.add_request(next_request)
 
-    def craw_keywords(self, index=0, page=1):
-        keywords = self.get_keywords()
+    def craw_keywords(self, index=0, page=1, extend_keywords_only=False):
+        keywords = self.get_keywords(extend_keywords_only)
         negative_keywords = self.get_negative_keywords()
         keyword_manager = RequestManager()
 
@@ -84,8 +84,10 @@ class Spider():
             next_request = self._prepare_keywords_request(keyword, page, page_size)
             keyword_manager.add_request(next_request)
 
-    def craw_rank(self, index=0):
-        keywords = self.get_keywords()
+    def craw_rank(self, index=0, extend_keywords_only=False, special_keywords=None):
+        keywords = self.get_keywords(extend_keywords_only)
+        if special_keywords is not None and len(special_keywords)>0:
+            keywords = special_keywords
         keyword = keywords[index]
         csrf_token = self._get_product_csrf_token()
         manager = RequestManager()
@@ -258,9 +260,12 @@ class Spider():
 
         return cookies
 
-    def get_keywords(self):
-        keywords = self.db.get_product_keywords()
+    def get_keywords(self, extend_keywords_only=False):
         extend_keywords = self.get_extend_keywords()
+        if extend_keywords_only:
+            return sorted(extend_keywords)
+
+        keywords = self.db.get_product_keywords()
         negative_keywords = self.get_negative_keywords()
         if extend_keywords is not None and len(extend_keywords) != 0:
             keywords.extend(extend_keywords)
@@ -270,7 +275,7 @@ class Spider():
 
     def get_extend_keywords(self):
         extend_keywords = None
-        with open('./config/keywords.txt', 'r') as f:
+        with open('./config/extend_keywords.txt', 'r') as f:
             extend_keywords = f.read().splitlines()
         return extend_keywords
 
@@ -293,6 +298,8 @@ class RequestManager():
             return
         if item not in self.requests and item not in self.old_requests:
             self.requests.add(item)
+        # 每次请求之间需要有一定的时间间隔
+        time.sleep(random.randint(1, 10))
 
     def add_requests(self, items):
         """批量添加请求到队列中。"""
@@ -309,6 +316,4 @@ class RequestManager():
         """从请求列表中获取新的请求"""
         request = self.requests.pop()
         self.old_requests.add(request)
-        # 每次请求之间需要有一定的时间间隔
-        time.sleep(random.randint(1, 10))
         return request

@@ -1,5 +1,5 @@
 import json
-from datetime import datetime, date
+from datetime import datetime, date, timedelta, timezone
 from sqlalchemy import Integer, String, Date, DateTime, Boolean
 from sqlalchemy import Column, create_engine, func
 from sqlalchemy.orm import sessionmaker
@@ -42,7 +42,7 @@ class Rank(Base):
 
     keyword = Column('keyword_value', String, primary_key=True)
     ranking = Column('ranking', String)
-    update = Column('update', Date, default=func.now())
+    update = Column('update', Date)
 
 class Database():
     session = None
@@ -63,7 +63,9 @@ class Database():
             return
         record = self.session.query(Rank).filter_by(keyword=rank.keyword).first()
         if record is not None:
-            record = rank
+            record.keyword = rank.keyword
+            record.ranking = rank.ranking
+            record.update = rank.update
         else:
             self.session.add(rank)
         self.session.commit()
@@ -74,32 +76,33 @@ class Database():
         for keyword in keywords:
             record = self.session.query(Keyword).filter_by(value=keyword.value).first()
             if record is not None:
-                record = keyword
+                record.value = keyword.value
+                record.repeat_keyword = keyword.repeat_keyword
+                record.company_cnt = keyword.company_cnt
+                record.showwin_cnt = keyword.showwin_cnt
+                record.srh_pv = keyword.srh_pv
+                record.update = keyword.update
+                record.is_p4p_keyword = keyword.is_p4p_keyword
             else:
                 self.session.add(keyword)
         self.session.commit()
 
     def rank_exsit_unneed_update(self, keyword):
         record = self.session.query(Rank).filter_by(keyword=keyword).first()
-        if record is None or record.update == date.today():
+        if record is not None or record.update == date.today():
             # 如果是同一天的，就不用更新了
-            return False
-        else:
             return True
+        else:
+            return False
 
     def keyword_exsit_unneed_update(self, keyword):
         record = self.session.query(Keyword).filter_by(value=keyword).first()
-        if record is None or self._is_date_update_keyword(record.update):
-            return False
-        else:
+        tz_info = timezone(timedelta(hours=-8))
+        next_month = record.update.replace(month=record.update.month+1).replace(tzinfo=tz_info)
+        if record is not None or next_month > datetime.now(get_localzone()):
             return True
-
-    def _is_date_update_keyword(self, update):
-        next_month = update.replace(month=update.month+1)
-        if next_month > datetime.now(get_localzone()):
-            return False
         else:
-            return True
+            return False
 
     def get_product_keywords(self):
         keywords = set()
@@ -110,13 +113,11 @@ class Database():
     def get_products(self):
         return self.session.query(Product).all()
 
-    def get_keyword_ranking(self, keyword):
-        ranking = None
-        rank = self.session.query(Rank).filter_by(keyword=keyword).first()
+    def get_keyword_rank_info(self, keyword):
+        rank = self.session.query(Rank).filter_by(keyword=keyword.lower()).first()
         if rank is None:
-            return ranking
-        ranking = json.loads(rank.ranking)
-        return ranking
+            return None
+        return json.loads(rank.ranking)
 
     def get_keyword(self, value):
         keyword = self.session.query(Keyword).filter_by(value=value).first()
