@@ -4,3 +4,4 @@
 **/__pycache__/*
 Spider/tests/*
 *.csv
+**/config/*
