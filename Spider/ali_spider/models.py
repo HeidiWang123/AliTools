@@ -90,20 +90,15 @@ class Database():
 
     def rank_exsit_unneed_update(self, keyword):
         record = self.session.query(Rank).filter_by(keyword=keyword).first()
-        if record is not None and record.update == date.today():
-            # 如果是同一天的，就不用更新了
-            return True
-        else:
-            return False
+        delta_days = (date.today() - record.update).days
+        return record is not None and delta_days<2
 
     def keyword_exsit_unneed_update(self, keyword):
         record = self.session.query(Keyword).filter_by(value=keyword).first()
         tzpdt = timezone('US/Pacific')
         next_month = record.update.replace(month=record.update.month+1).replace(tzinfo=tzpdt)
-        if record is not None and next_month > datetime.now(get_localzone()):
-            return True
-        else:
-            return False
+        local = datetime.now(get_localzone())
+        return record is not None and next_month>local
 
     def get_product_keywords(self):
         keywords = set()
