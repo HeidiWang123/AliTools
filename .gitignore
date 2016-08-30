@@ -5,3 +5,4 @@
 Spider/tests/*
 *.csv
 **/config/*
+**/csv/*
