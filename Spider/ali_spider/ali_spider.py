@@ -6,9 +6,12 @@
 import os.path
 import json
 import csv
-from datetime import datetime
+import datetime
 from spider import Spider
 from models import Database
+from parser import OverRequestCountError
+from pytz import timezone
+from tzlocal import get_localzone
 
 webdriver_path = os.path.abspath(os.path.join(os.path.dirname(__file__),'webdriver'))
 os.environ["PATH"] += os.pathsep + webdriver_path
@@ -21,22 +24,29 @@ class SpiderMain():
 
     def craw(self, craw_products=True, craw_keywords=True, craw_rank=True,
              extend_keywords_only=False, products_only=False):
-        if craw_products and not extend_keywords_only:
-            self.spider.craw_products()
-        if craw_keywords:
-            self.spider.craw_keywords(extend_keywords_only=extend_keywords_only,
+        try:
+            if craw_products and not extend_keywords_only:
+                self.spider.craw_products()
+            if craw_keywords:
+                self.spider.craw_keywords(extend_keywords_only=extend_keywords_only,
+                                          products_only=products_only)
+            if craw_rank:
+                self.spider.craw_rank(extend_keywords_only=extend_keywords_only,
                                       products_only=products_only)
-        if craw_rank:
-            self.spider.craw_rank(extend_keywords_only=extend_keywords_only,
-                                  products_only=products_only)
-        self._generate_csv(extend_keywords_only=extend_keywords_only,
-                           products_only=products_only)
+            self._generate_csv(extend_keywords_only=extend_keywords_only,
+                               products_only=products_only)
+        except OverRequestCountError:
+            tzpdt = timezone('US/Pacific')
+            next_datetime = (datetime.datetime.now(tzpdt) + datetime.timedelta(days=1)).replace(
+                hour=0, minute=0, second=0, microsecond=0)
+            local_datetime = next_datetime.astimezone(get_localzone())
+            print('查询太频繁，请%s再试' % local_datetime.strftime(' %d 号 %H:%M:%S '))
 
     def _generate_csv(self, extend_keywords_only=False, products_only=False):
         csv_header = ["关键词", "负责人", "产品编号", "产品排名", "第一位排名", "第一产品", "贸易表现",
                       "橱窗", "P4P", "供应商竞争度", "橱窗数", "热搜度"]
 
-        csv_file = "./csv/alibab" + datetime.now().strftime("%Y%m%d-%H%M%S") + ".csv"
+        csv_file = "./csv/alibab" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S") + ".csv"
         with open(csv_file, "w", encoding='utf-8-sig') as f:
             writer = csv.writer(f)
             writer.writerow(csv_header)

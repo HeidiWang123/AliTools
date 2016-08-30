@@ -32,7 +32,7 @@ def parse_rank(response, index, keywords):
     tips = soup.select('.search-result')
 
     if '查询太频繁，请明日再试！' in str(tips):
-        raise RuntimeError('查询太频繁，请明日再试！')
+        raise OverRequestCountError('查询太频繁，请明日再试！')
 
     next_index = _get_next_page(0, index, 1, len(keywords))
 
@@ -137,3 +137,7 @@ def _get_next_page(start, page, size, count):
         next_page = page + 1
 
     return next_page
+
+class OverRequestCountError(Exception):
+    def __init__(self, value):
+        super(OverRequestCountError, self).__init__(value)

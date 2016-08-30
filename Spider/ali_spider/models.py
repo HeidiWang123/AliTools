@@ -1,10 +1,11 @@
 import json
-from datetime import datetime, date, timedelta, timezone
+from datetime import datetime, date, timedelta
 from sqlalchemy import Integer, String, Date, DateTime, Boolean
-from sqlalchemy import Column, create_engine, func
+from sqlalchemy import Column, create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 from tzlocal import get_localzone
+from pytz import timezone
 
 Base = declarative_base()
 
@@ -97,8 +98,8 @@ class Database():
 
     def keyword_exsit_unneed_update(self, keyword):
         record = self.session.query(Keyword).filter_by(value=keyword).first()
-        tz_info = timezone(timedelta(hours=-8))
-        next_month = record.update.replace(month=record.update.month+1).replace(tzinfo=tz_info)
+        tzpdt = timezone('US/Pacific')
+        next_month = record.update.replace(month=record.update.month+1).replace(tzinfo=tzpdt)
         if record is not None and next_month > datetime.now(get_localzone()):
             return True
         else:
