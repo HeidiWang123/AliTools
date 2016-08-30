@@ -290,7 +290,7 @@ class Spider():
     def send_request(self, request):
         # 每次请求之间需要有一定的时间间隔
         time.sleep(random.randint(1, 5))
-        self.session.send(request)
+        return self.session.send(request)
 
 class RequestManager():
     """请求队列管理器。"""
