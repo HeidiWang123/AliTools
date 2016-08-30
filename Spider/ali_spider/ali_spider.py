@@ -19,21 +19,24 @@ class SpiderMain():
         self.database = database
         self.spider = Spider(self.database)
 
-    def craw(self, craw_products=True, craw_keywords=True, craw_rank=True, extend_keywords_only=False):
+    def craw(self, craw_products=True, craw_keywords=True, craw_rank=True,
+             extend_keywords_only=False, extend_products_only=False):
         if craw_products and not extend_keywords_only:
             self.spider.craw_products()
         if craw_keywords:
-            self.spider.craw_keywords(extend_keywords_only=extend_keywords_only)
+            self.spider.craw_keywords(extend_keywords_only=extend_keywords_only,
+                                      extend_products_only=extend_products_only)
         if craw_rank:
             self.spider.craw_rank(extend_keywords_only=extend_keywords_only,
-                                  special_keywords=['a4 size file folder'])
-        self._generate_csv(extend_keywords_only=extend_keywords_only)
+                                  extend_products_only=extend_products_only)
+        self._generate_csv(extend_keywords_only=extend_keywords_only,
+                           extend_products_only=extend_products_only)
 
-    def _generate_csv(self, extend_keywords_only=False):
+    def _generate_csv(self, extend_keywords_only=False, extend_products_only=False):
         csv_header = ["关键词", "负责人", "产品编号", "产品排名", "第一位排名", "第一产品", "贸易表现",
                       "橱窗", "P4P", "供应商竞争度", "橱窗数", "热搜度"]
 
-        csv_file = "alibab" + datetime.now().strftime("%Y%m%d-%H%M%S") + ".csv"
+        csv_file = "./csv/alibab" + datetime.now().strftime("%Y%m%d-%H%M%S") + ".csv"
         with open(csv_file, "w", encoding='utf-8-sig') as f:
             writer = csv.writer(f)
             writer.writerow(csv_header)
@@ -42,6 +45,10 @@ class SpiderMain():
             if extend_keywords_only:
                 self._write_keywords(writer=writer, keywords=keywords, products=products)
                 return
+            if extend_products_only:
+                self._write_products(writer=writer, products=products)
+                return
+            self._write_keywords(writer=writer, keywords=keywords, products=products)
             self._write_products(writer=writer, products=products)
 
     def _write_keywords(self, writer, keywords, products):
@@ -157,11 +164,34 @@ class SpiderMain():
                 top1_style_no = p.style_no
         return top1_style_no, top1_ranking
 
+    def craw_rank(self):
+        self.craw(craw_products=False, craw_keywords=False, craw_rank=True)
+
+    def craw_products_rank(self):
+        self.craw(craw_products=False, craw_keywords=False, craw_rank=True,
+                  extend_products_only=True)
+
+    def craw_exntend_keywords_rank(self):
+        self.craw(craw_products=True, craw_keywords=False, craw_rank=True,
+                  extend_keywords_only=True)
+
+    def craw_products(self):
+        self.craw(craw_products=True, craw_keywords=False, craw_rank=False)
+
+    def craw_keywords(self):
+        self.craw(craw_products=False, craw_keywords=True, craw_rank=False)
+
+    def craw_products_keywords(self):
+        self.craw(craw_products=False, craw_keywords=True, craw_rank=False,
+                  extend_products_only=True)
+
+    def craw_exntend_keywords(self):
+        self.craw(craw_products=False, craw_keywords=True, craw_rank=False,
+                  extend_keywords_only=True)
+
+
 if __name__ == "__main__":
     db = Database()
     spider_main = SpiderMain(db)
-    spider_main.craw(craw_products=False,
-                     craw_keywords=False,
-                     craw_rank=True,
-                     extend_keywords_only=False)
+    spider_main.craw_products_rank()
     db.close()
