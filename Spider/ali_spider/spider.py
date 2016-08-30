@@ -38,7 +38,7 @@ class Spider():
             print("\r[ProductsSpider] - page [%d]" % (page))
 
             new_request = manager.get_request()
-            response = self.session.send(new_request)
+            response = self.send_request(new_request)
 
             page, products = parser.parse_product(response, page_size)
             self.db.upsert_products(products)
@@ -69,7 +69,7 @@ class Spider():
                 print('keyword %s is already in database, ignored' % keyword)
                 page = None
             else:
-                response = self.session.send(new_request)
+                response = self.send_request(new_request)
                 page, page_keywords = parser.parse_keyword(response, page, page_size, negative_keywords)
                 self.db.upsert_keywords(page_keywords)
 
@@ -107,7 +107,7 @@ class Spider():
                 index += 1
             else:
                 new_request = manager.get_request()
-                response = self.session.send(new_request)
+                response = self.send_request(new_request)
                 index, rank = parser.parse_rank(response, index, keywords)
                 self.db.upsert_rank(rank)
                 print("done")
@@ -287,6 +287,11 @@ class Spider():
             negative_keywords = f.read().splitlines()
         return negative_keywords
 
+    def send_request(self, request):
+        # 每次请求之间需要有一定的时间间隔
+        time.sleep(random.randint(1, 5))
+        self.session.send(request)
+
 class RequestManager():
     """请求队列管理器。"""
 
@@ -300,8 +305,6 @@ class RequestManager():
             return
         if item not in self.requests and item not in self.old_requests:
             self.requests.add(item)
-        # 每次请求之间需要有一定的时间间隔
-        time.sleep(random.randint(1, 10))
 
     def add_requests(self, items):
         """批量添加请求到队列中。"""
