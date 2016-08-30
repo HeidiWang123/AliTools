@@ -89,7 +89,7 @@ class Database():
 
     def rank_exsit_unneed_update(self, keyword):
         record = self.session.query(Rank).filter_by(keyword=keyword).first()
-        if record is not None or record.update == date.today():
+        if record is not None and record.update == date.today():
             # 如果是同一天的，就不用更新了
             return True
         else:
@@ -99,7 +99,7 @@ class Database():
         record = self.session.query(Keyword).filter_by(value=keyword).first()
         tz_info = timezone(timedelta(hours=-8))
         next_month = record.update.replace(month=record.update.month+1).replace(tzinfo=tz_info)
-        if record is not None or next_month > datetime.now(get_localzone()):
+        if record is not None and next_month > datetime.now(get_localzone()):
             return True
         else:
             return False

@@ -20,19 +20,19 @@ class SpiderMain():
         self.spider = Spider(self.database)
 
     def craw(self, craw_products=True, craw_keywords=True, craw_rank=True,
-             extend_keywords_only=False, extend_products_only=False):
+             extend_keywords_only=False, products_only=False):
         if craw_products and not extend_keywords_only:
             self.spider.craw_products()
         if craw_keywords:
             self.spider.craw_keywords(extend_keywords_only=extend_keywords_only,
-                                      extend_products_only=extend_products_only)
+                                      products_only=products_only)
         if craw_rank:
             self.spider.craw_rank(extend_keywords_only=extend_keywords_only,
-                                  extend_products_only=extend_products_only)
+                                  products_only=products_only)
         self._generate_csv(extend_keywords_only=extend_keywords_only,
-                           extend_products_only=extend_products_only)
+                           products_only=products_only)
 
-    def _generate_csv(self, extend_keywords_only=False, extend_products_only=False):
+    def _generate_csv(self, extend_keywords_only=False, products_only=False):
         csv_header = ["关键词", "负责人", "产品编号", "产品排名", "第一位排名", "第一产品", "贸易表现",
                       "橱窗", "P4P", "供应商竞争度", "橱窗数", "热搜度"]
 
@@ -45,7 +45,7 @@ class SpiderMain():
             if extend_keywords_only:
                 self._write_keywords(writer=writer, keywords=keywords, products=products)
                 return
-            if extend_products_only:
+            if products_only:
                 self._write_products(writer=writer, products=products)
                 return
             self._write_keywords(writer=writer, keywords=keywords, products=products)
@@ -169,7 +169,7 @@ class SpiderMain():
 
     def craw_products_rank(self):
         self.craw(craw_products=False, craw_keywords=False, craw_rank=True,
-                  extend_products_only=True)
+                  products_only=True)
 
     def craw_exntend_keywords_rank(self):
         self.craw(craw_products=True, craw_keywords=False, craw_rank=True,
@@ -183,11 +183,11 @@ class SpiderMain():
 
     def craw_products_keywords(self):
         self.craw(craw_products=False, craw_keywords=True, craw_rank=False,
-                  extend_products_only=True)
+                  products_only=True)
 
     def craw_exntend_keywords(self):
         self.craw(craw_products=False, craw_keywords=True, craw_rank=False,
-                  extend_keywords_only=True)
+                  products_only=True)
 
 
 if __name__ == "__main__":
