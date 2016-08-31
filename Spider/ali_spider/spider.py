@@ -4,6 +4,7 @@
 import re
 import sys
 import time
+import os
 import pickle
 import http.cookiejar
 import random
@@ -24,7 +25,7 @@ class Spider():
     def __init__(self, db):
         self.db = db
         self.cookies = self._get_cookies()
-        self.session = self._create_session(self.cookies)
+        self.session = self._create_session()
 
     def craw_products(self, page=1):
         page_size = 50
@@ -200,10 +201,10 @@ class Spider():
         rank_csrf_token = soup.find("input", {"name":"_csrf_token_"})['value']
         return rank_csrf_token
 
-    def _create_session(self, cookies):
+    def _create_session(self):
         """创建 requests session"""
         session = requests.Session()
-        session.cookies = cookies
+        session.cookies = self.cookies
         session.headers = {
             'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
             'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64; rv:48.0) Gecko/20100101 Firefox/48.0',
@@ -212,16 +213,21 @@ class Spider():
             'Connection': 'keep-alive',
             'Upgrade-Insecure-Requests': '1',
         }
+        r = session.get('http://i.alibaba.com/index.htm', allow_redirects=False)
+        if r.status_code == requests.codes.moved_permanently:
+            self.cookies = self._get_cookies(disable_cache=True)
         return session
 
-    def _get_cookies(self):
+    def _get_cookies(self, disable_cache=False):
         cookies = None
-        dump_file = 'cookies.pkl'
-        try:
+        dump_file = './cookies.pkl'
+        if not disable_cache and os.path.exists(dump_file):
             with open(dump_file, "rb") as dump:
                 cookies = pickle.load(dump)
-        except FileNotFoundError:
+        else:
             cookies = self._get_cookies_via_selenium()
+            if os.path.exists(dump_file):
+                os.remove(dump_file)
             with open(dump_file, "wb") as dump:
                 pickle.dump(cookies, dump)
         return cookies

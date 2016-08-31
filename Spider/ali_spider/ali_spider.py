@@ -207,5 +207,5 @@ class SpiderMain():
 if __name__ == "__main__":
     db = Database()
     spider_main = SpiderMain(db)
-    spider_main.craw_products_rank()
+    spider_main.craw(False, False, False)
     db.close()
