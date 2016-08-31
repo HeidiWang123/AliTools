@@ -34,7 +34,7 @@ class SpiderMain():
                 self.spider.craw_rank(extend_keywords_only=extend_keywords_only,
                                       products_only=products_only)
             self.generate_csv(extend_keywords_only=extend_keywords_only,
-                               products_only=products_only)
+                              products_only=products_only)
         except OverRequestCountError:
             tzpdt = timezone('US/Pacific')
             next_datetime = (datetime.datetime.now(tzpdt) + datetime.timedelta(days=1)).replace(
@@ -108,26 +108,27 @@ class SpiderMain():
                     t_srh_pv = srh_pv['srh_pv_this_mon']
 
                 self._writerow(writer=writer,
-                         t_keyword=product_keyword,
-                         t_owner=product.owner,
-                         t_style_no=product.style_no,
-                         t_product_ranking=t_product_ranking,
-                         t_is_trade_product=product.is_trade_product,
-                         t_is_window_product=product.is_window_product,
-                         t_top1_style_no=t_top1_style_no,
-                         t_top1_ranking=t_top1_ranking,
-                         t_is_p4p_keyword=t_is_p4p_keyword,
-                         t_company_cnt=t_company_cnt,
-                         t_showwin_cnt=t_showwin_cnt,
-                         t_srh_pv=t_srh_pv
-                        )
+                               t_keyword=product_keyword,
+                               t_owner=product.owner,
+                               t_style_no=product.style_no,
+                               t_product_ranking=t_product_ranking,
+                               t_is_trade_product=product.is_trade_product,
+                               t_is_window_product=product.is_window_product,
+                               t_top1_style_no=t_top1_style_no,
+                               t_top1_ranking=t_top1_ranking,
+                               t_is_p4p_keyword=t_is_p4p_keyword,
+                               t_company_cnt=t_company_cnt,
+                               t_showwin_cnt=t_showwin_cnt,
+                               t_srh_pv=t_srh_pv
+                              )
 
     def _writerow(self, writer, **info):
         t_keyword = info.get('t_keyword', None)
         if t_keyword is None:
             print("keyword is None, ignored.")
             return
-        if t_keyword != 'a4 size file folder':
+        if t_keyword is 'dress belt':
+            print(t_keyword)
             return
         t_owner = info.get('t_owner', None)
         t_style_no = info.get('t_style_no', None)
@@ -200,7 +201,7 @@ class SpiderMain():
                   products_only=True)
 
     def generate_month_new_keywords_csv(self):
-        # TODO: 
+        # TODO:
         pass
 
 if __name__ == "__main__":
