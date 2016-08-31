@@ -90,14 +90,13 @@ class Spider():
         keywords = self.get_keywords(extend_keywords_only=extend_keywords_only,
                                      products_only=products_only)
         keyword = keywords[index]
-        csrf_token = self._get_product_csrf_token()
         manager = RequestManager()
 
         if index >= len(keywords):
             print('index over range')
             return
 
-        first_request = self._prepare_rank_request(csrf_token=csrf_token, keyword=keyword)
+        first_request = self._prepare_rank_request(keyword=keyword)
         manager.add_request(first_request)
 
         while manager.has_request():
@@ -116,7 +115,7 @@ class Spider():
             if index is None or index >= len(keywords):
                 break
             keyword = keywords[index]
-            new_request = self._prepare_rank_request(csrf_token = csrf_token, keyword=keyword)
+            new_request = self._prepare_rank_request(keyword=keyword)
             manager.add_request(new_request)
 
     def _prepare_products_request(self, csrf_token, page, page_size):
@@ -169,20 +168,20 @@ class Spider():
         req = requests.Request('POST', url, data=data, headers=headers, cookies=self.cookies)
         return req.prepare()
 
-    def _prepare_rank_request(self, csrf_token, keyword):
-        url = "http://hz-productposting.alibaba.com/product/ranksearch/rankSearch.htm"
+    def _prepare_rank_request(self, keyword):
+        url = "http://hz-mydata.alibaba.com/self/.json?action=CommonAction&iName=getKeywordSearchProducts"
         headers = {
-            'Host': 'hz-productposting.alibaba.com',
+            'Host': 'hz-mydata.alibaba.com',
             'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64; rv:48.0) Gecko/20100101 Firefox/48.0',
-            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+            'Accept': '*/*',
             'Accept-Language': 'zh-CN,en-US;q=0.7,en;q=0.3',
-            'Referer': 'http://hz-productposting.alibaba.com/product/ranksearch/rankSearch.htm',
+            'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+            'X-Requested-With': 'XMLHttpRequest',
+            'Referer': 'http://hz-mydata.alibaba.com/self/keyword.htm?spm=a2700.7756200.1998618981.63.32KNMS',
             'Connection': 'keep-alive',
-            'Upgrade-Insecure-Requests': '1',
         }
         data = {
-            '_csrf_token_': csrf_token,
-            'queryString': keyword,
+            'keyword': keyword,
         }
         req = requests.Request('POST', url, data=data, headers=headers, cookies=self.cookies)
         return req.prepare()
@@ -193,13 +192,6 @@ class Spider():
         pattern = r"(?<={'_csrf_token_':')\w+(?='})"
         product_csrf_token = re.search(pattern, html).group(0)
         return product_csrf_token
-
-    def _get_rank_csrf_token(self):
-        url = "http://hz-productposting.alibaba.com/product/ranksearch/rankSearch.htm"
-        html = self.session.get(url).content
-        soup = BeautifulSoup(html, 'html.parser')
-        rank_csrf_token = soup.find("input", {"name":"_csrf_token_"})['value']
-        return rank_csrf_token
 
     def _create_session(self):
         """创建 requests session"""

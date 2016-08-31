@@ -1,12 +1,10 @@
 """解析器
 """
 
-import re
 import math
 import json
 from datetime import datetime, date
 from models import Product, Rank, Keyword
-from bs4 import BeautifulSoup
 
 def parse_product(response, page_size):
     """产品结果解析器
@@ -27,38 +25,20 @@ def parse_product(response, page_size):
 def parse_rank(response, index, keywords):
     """rank 结果解析器
     """
-    soup = BeautifulSoup(response.content, 'html.parser')
-    rows = soup.select('#rank-searech-table > tbody > tr')
-    tips = soup.select('.search-result')
+    keyword = keywords[index]
+    rank = Rank(keyword=keyword, update=date.today())
 
-    if '查询太频繁，请明日再试！' in str(tips):
-        raise OverRequestCountError('查询太频繁，请明日再试！')
+    json_ranks = response.json()['value']
+    if json_ranks is not None and len(json_ranks) > 0:
+        ranking_list = list()
+        for item in json_ranks:
+            ranking_list.append({
+                'product_id': item['id'],
+                'ranking': item['pageNO'] + item['rowNO']/100,
+            })
+        rank.ranking = json.dumps(ranking_list)
 
     next_index = _get_next_page(0, index, 1, len(keywords))
-
-    if '无匹配结果' in str(rows):
-        return next_index, None
-
-    ranking = list()
-    for row in rows:
-        product_href = row.select('td:nth-of-type(1) > a')[0].get('href')
-        rank_text = row.select('td:nth-of-type(2) > a')[0].text.strip()
-        charge_spans = row.select('td:nth-of-type(3) > span')
-
-        product_id = re.findall(r'(?<=id=)\d+', product_href)[0]
-        rank = (lambda x: round(float(x[0]) + float(x[1])/100, 2))(
-            re.findall(r'(\d+)', rank_text))
-        is_selection = True if '搜索首页精选产品' in [x.text for x in charge_spans] else False
-        is_p4p = True if 'P4P产品' in [x.text for x in charge_spans] else False
-        is_window = True if '橱窗产品' in [x.text for x in charge_spans] else False
-
-        ranking.append({'product_id': product_id,
-                        'ranking': rank,
-                        'is_selection': is_selection,
-                        'is_p4p': is_p4p,
-                        'is_window': is_window})
-
-    rank = Rank(keyword=keywords[index], ranking=json.dumps(ranking), update=date.today())
     return next_index, rank
 
 def parse_keyword(response, page, page_size, negative_keywords):
