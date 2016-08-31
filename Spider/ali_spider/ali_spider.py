@@ -33,7 +33,7 @@ class SpiderMain():
             if craw_rank:
                 self.spider.craw_rank(extend_keywords_only=extend_keywords_only,
                                       products_only=products_only)
-            self._generate_csv(extend_keywords_only=extend_keywords_only,
+            self.generate_csv(extend_keywords_only=extend_keywords_only,
                                products_only=products_only)
         except OverRequestCountError:
             tzpdt = timezone('US/Pacific')
@@ -42,7 +42,7 @@ class SpiderMain():
             local_datetime = next_datetime.astimezone(get_localzone())
             print('查询太频繁，请%s再试' % local_datetime.strftime(' %d 号 %H:%M:%S '))
 
-    def _generate_csv(self, extend_keywords_only=False, products_only=False):
+    def generate_csv(self, extend_keywords_only=False, products_only=False):
         csv_header = ["关键词", "负责人", "产品编号", "产品排名", "第一位排名", "第一产品", "贸易表现",
                       "橱窗", "P4P", "供应商竞争度", "橱窗数", "热搜度"]
 
@@ -199,6 +199,9 @@ class SpiderMain():
         self.craw(craw_products=False, craw_keywords=True, craw_rank=False,
                   products_only=True)
 
+    def generate_month_new_keywords_csv(self):
+        # TODO: 
+        pass
 
 if __name__ == "__main__":
     db = Database()
