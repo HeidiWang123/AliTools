@@ -22,7 +22,7 @@ class SpiderMain():
         self.database = database
         self.spider = Spider(self.database)
 
-    def craw(self, craw_products=True, craw_keywords=True, craw_rank=True,
+    def craw(self, craw_products=False, craw_keywords=False, craw_rank=False,
              extend_keywords_only=False, products_only=False):
         try:
             if craw_products and not extend_keywords_only:
@@ -188,30 +188,29 @@ class SpiderMain():
                 top1_style_no = p.style_no
         return top1_style_no, top1_ranking
 
-    def craw_rank(self):
-        self.craw(craw_products=False, craw_keywords=False, craw_rank=True)
+    def craw_rank(self, craw_products=True):
+        self.craw(craw_products=craw_products, craw_rank=True)
 
-    def craw_products_rank(self):
-        self.craw(craw_products=False, craw_keywords=False, craw_rank=True,
-                  products_only=True)
+    def craw_products_rank(self, craw_products=True):
+        self.craw(craw_products=craw_products, craw_rank=True, products_only=True)
 
     def craw_exntend_keywords_rank(self):
-        self.craw(craw_products=True, craw_keywords=False, craw_rank=True,
-                  extend_keywords_only=True)
+        self.craw(craw_rank=True, extend_keywords_only=True)
 
     def craw_products(self):
-        self.craw(craw_products=True, craw_keywords=False, craw_rank=False)
+        self.craw(craw_products=True)
 
-    def craw_keywords(self):
-        self.craw(craw_products=False, craw_keywords=True, craw_rank=False)
+    def craw_keywords(self, craw_products=True):
+        self.craw(craw_products=craw_products, craw_keywords=True)
 
-    def craw_products_keywords(self):
-        self.craw(craw_products=False, craw_keywords=True, craw_rank=False,
-                  products_only=True)
+    def craw_products_keywords(self, craw_products=True):
+        self.craw(craw_products=craw_products, craw_keywords=True, products_only=True)
 
     def craw_exntend_keywords(self):
-        self.craw(craw_products=False, craw_keywords=True, craw_rank=False,
-                  products_only=True)
+        self.craw(craw_keywords=True, products_only=True)
+
+    def craw_all(self):
+        self.craw(craw_products=True, craw_keywords=True, craw_rank=True)
 
     def generate_month_new_keywords_csv(self):
         # TODO:
@@ -220,5 +219,5 @@ class SpiderMain():
 if __name__ == "__main__":
     db = Database()
     spider_main = SpiderMain(db)
-    spider_main.craw(False, False, False)
+    spider_main.craw_products()
     db.close()
