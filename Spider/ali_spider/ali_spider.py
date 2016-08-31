@@ -51,15 +51,15 @@ class SpiderMain():
             writer = csv.writer(f)
             writer.writerow(csv_header)
             products = self.database.get_products()
-            keywords = self.spider.get_keywords(extend_keywords_only)
+            extend_keywords = self.spider.get_keywords(extend_keywords_only=True)
             if extend_keywords_only:
-                self._write_keywords(writer=writer, keywords=keywords, products=products)
+                self._write_keywords(writer=writer, keywords=extend_keywords, products=products)
                 return
             if products_only:
                 self._write_products(writer=writer, products=products)
                 return
-            self._write_keywords(writer=writer, keywords=keywords, products=products)
             self._write_products(writer=writer, products=products)
+            self._write_keywords(writer=writer, keywords=extend_keywords, products=products)
 
     def _write_keywords(self, writer, keywords, products):
         for keyword in keywords:
@@ -168,10 +168,11 @@ class SpiderMain():
 
     def _get_rank_info(self, rank_info, products, product_id):
         product_ranking = '-'
-        if rank_info is not None and len(rank_info) != 0:
+        if rank_info is not None and len(rank_info) > 0:
             for item in rank_info:
-                if item['product_id'] == str(product_id):
+                if str(item['product_id']) == str(product_id):
                     product_ranking = item['ranking']
+                    break
         top1_style_no, top1_ranking = self._get_top_rank_info(rank_info=rank_info, products=products)
         return product_ranking, top1_style_no, top1_ranking
 
@@ -184,8 +185,9 @@ class SpiderMain():
         top1_rank_info = sorted(rank_info, key=lambda x: x['ranking'])[0]
         top1_ranking = top1_rank_info['ranking']
         for p in products:
-            if str(p.id) == top1_rank_info['product_id']:
+            if str(p.id) == str(top1_rank_info['product_id']):
                 top1_style_no = p.style_no
+                break
         return top1_style_no, top1_ranking
 
     def craw_rank(self, craw_products=True):
@@ -219,5 +221,6 @@ class SpiderMain():
 if __name__ == "__main__":
     db = Database()
     spider_main = SpiderMain(db)
-    spider_main.craw_products_rank()
+    # spider_main.craw_products_rank()
+    spider_main.generate_csv()
     db.close()

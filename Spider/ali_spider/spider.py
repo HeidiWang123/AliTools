@@ -36,7 +36,9 @@ class Spider():
         manager.add_request(first_request)
         self.db.clear_products()
         while manager.has_request():
-            print("\r[ProductsSpider] - page [%d]" % (page))
+            sys.stdout.flush()
+            sys.stdout.write("\r")
+            sys.stdout.write("Product] P[%d] | " % (page))
 
             new_request = manager.get_request()
             response = self.send_request(new_request)
@@ -44,7 +46,8 @@ class Spider():
             page, products = parser.parse_product(response, page_size)
             self.db.upsert_products(products)
 
-            print('done')
+            sys.stdout.write("[done]")
+            sys.stdout.flush()
             if page is None:
                 break
 
@@ -63,18 +66,21 @@ class Spider():
         keyword_manager.add_request(first_request)
 
         while keyword_manager.has_request():
-            print("\r[KeywordSpider] - %d:[%s] - page [%d]" % (index, keyword, page))
+            sys.stdout.flush()
+            sys.stdout.write("\r")
+            sys.stdout.write("[Keyword: %s] I[%d]P[%d] | " % (keyword, index, page))
 
             new_request = keyword_manager.get_request()
             if self.db.keyword_exsit_unneed_update(keyword):
-                print('keyword %s is already in database, ignored' % keyword)
+                sys.stdout.write('exist & unneed update | ')
                 page = None
             else:
                 response = self.send_request(new_request)
                 page, page_keywords = parser.parse_keyword(response, page, page_size, negative_keywords)
                 self.db.upsert_keywords(page_keywords)
 
-            print("done")
+            sys.stdout.write("[done]")
+            sys.stdout.flush()
             if page is None:
                 page = 1
                 index = index + 1
@@ -100,17 +106,23 @@ class Spider():
         manager.add_request(first_request)
 
         while manager.has_request():
-            print("\r[RankSpider] - %d:[%s]" % (index, keyword))
+            # sys.stdout.flush()
+            # sys.stdout.write("\r")
+            # sys.stdout.write("[Rank: %s] I[%d] | " % (keyword, index))
+            print("[Rank: %s] I[%d] | " % (keyword, index), end="")
 
             if self.db.rank_exsit_unneed_update(keyword):
-                print('done [record is exist]')
+                # sys.stdout.write('exist & unneed update | ')
+                print('exist & unneed update | ', end="")
                 index += 1
             else:
                 new_request = manager.get_request()
                 response = self.send_request(new_request)
                 index, rank = parser.parse_rank(response, index, keywords)
                 self.db.upsert_rank(rank)
-                print("done")
+                # sys.stdout.write("[done]")
+                # sys.stdout.flush()
+                print("[done]")
 
             if index is None or index >= len(keywords):
                 break

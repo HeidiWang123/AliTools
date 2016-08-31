@@ -118,7 +118,7 @@ class Database():
 
     def get_keyword_rank_info(self, keyword):
         rank = self.session.query(Rank).filter_by(keyword=keyword.lower()).first()
-        if rank is None:
+        if rank is None or rank.ranking is None:
             return None
         return json.loads(rank.ranking)
 
