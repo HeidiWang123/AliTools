@@ -191,7 +191,7 @@ class SpiderMain():
     def craw_rank(self, craw_products=True):
         self.craw(craw_products=craw_products, craw_rank=True)
 
-    def craw_products_rank(self, craw_products=True):
+    def craw_products_rank(self, craw_products=False):
         self.craw(craw_products=craw_products, craw_rank=True, products_only=True)
 
     def craw_exntend_keywords_rank(self):

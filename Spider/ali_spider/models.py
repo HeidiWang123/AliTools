@@ -90,11 +90,15 @@ class Database():
 
     def rank_exsit_unneed_update(self, keyword):
         record = self.session.query(Rank).filter_by(keyword=keyword).first()
+        if record is None:
+            return True
+
         is_day2update = True
         if record.update is None:
             is_day2update = True
         else:
-            is_day2update = (date.today() - record.update).days > 0
+            print(record.update)
+            is_day2update = (date.today() - record.update).days > 1
         return record is not None and not is_day2update
 
     def keyword_exsit_unneed_update(self, keyword):
