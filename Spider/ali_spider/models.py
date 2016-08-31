@@ -94,7 +94,7 @@ class Database():
         if record.update is None:
             is_day2update = True
         else:
-            is_day2update = (date.today() - record.update).days > 2
+            is_day2update = (date.today() - record.update).days > 0
         return record is not None and not is_day2update
 
     def keyword_exsit_unneed_update(self, keyword):
@@ -122,6 +122,10 @@ class Database():
     def get_keyword(self, value):
         keyword = self.session.query(Keyword).filter_by(value=value).first()
         return keyword
+
+    def clear_products(self):
+        self.session.query(Product).delete()
+        self.session.commit()
 
     def close(self):
         self.session.commit()

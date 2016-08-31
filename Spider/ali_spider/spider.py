@@ -34,7 +34,7 @@ class Spider():
 
         first_request = self._prepare_products_request(csrf_token=csrf_token, page=page, page_size=page_size)
         manager.add_request(first_request)
-
+        self.db.clear_products()
         while manager.has_request():
             print("\r[ProductsSpider] - page [%d]" % (page))
 
