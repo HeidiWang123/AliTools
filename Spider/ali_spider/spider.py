@@ -10,7 +10,6 @@ import http.cookiejar
 import random
 from http.client import HTTPConnection
 import requests
-from bs4 import BeautifulSoup
 from selenium import webdriver
 from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 import selenium.webdriver.support.ui as ui
@@ -89,6 +88,7 @@ class Spider():
     def craw_rank(self, index=0, extend_keywords_only=False, products_only=False):
         keywords = self.get_keywords(extend_keywords_only=extend_keywords_only,
                                      products_only=products_only)
+        keywords = [re.sub(" +", " ", x.lower()) for x in keywords]
         keyword = keywords[index]
         manager = RequestManager()
 

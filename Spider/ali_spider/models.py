@@ -93,11 +93,9 @@ class Database():
         if record is None:
             return False
 
-        is_day2update = True
-        if record.update is None:
-            is_day2update = True
-        else:
-            is_day2update = (date.today() - record.update).days > 0
+        is_day2update = False
+        if record.update is not None:
+            is_day2update = date.today() > record.update
         return record is not None and not is_day2update
 
     def keyword_exsit_unneed_update(self, keyword):
@@ -107,8 +105,8 @@ class Database():
 
         tzpdt = timezone('US/Pacific')
         next_month = record.update.replace(month=record.update.month+1).replace(tzinfo=tzpdt)
-        local = datetime.now(get_localzone())
-        return record is not None and next_month>local
+        local_time = datetime.now(get_localzone())
+        return record is not None and next_month < local_time
 
     def get_product_keywords(self):
         keywords = set()

@@ -198,5 +198,5 @@ class SpiderMain():
 if __name__ == "__main__":
     db = Database()
     spider_main = SpiderMain(db)
-    spider_main.craw(craw_rank=True, generate_csv=False)
+    spider_main.craw(craw_rank=True)
     db.close()
