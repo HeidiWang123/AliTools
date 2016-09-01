@@ -91,7 +91,7 @@ class Database():
     def rank_exsit_unneed_update(self, keyword):
         record = self.session.query(Rank).filter_by(keyword=keyword).first()
         if record is None:
-            return True
+            return False
 
         is_day2update = True
         if record.update is None:
@@ -102,6 +102,9 @@ class Database():
 
     def keyword_exsit_unneed_update(self, keyword):
         record = self.session.query(Keyword).filter_by(value=keyword).first()
+        if record is None:
+            return False
+
         tzpdt = timezone('US/Pacific')
         next_month = record.update.replace(month=record.update.month+1).replace(tzinfo=tzpdt)
         local = datetime.now(get_localzone())
