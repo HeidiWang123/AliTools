@@ -22,7 +22,7 @@ class SpiderMain():
         self.database = database
         self.spider = Spider(self.database)
 
-    def craw(self, craw_products=False, craw_keywords=False, craw_rank=False,
+    def craw(self, craw_products=False, craw_keywords=False, craw_rank=False, craw_p4p=False,
              extend_keywords_only=False, products_only=False, generate_csv=False):
         try:
             if craw_products and not extend_keywords_only:
@@ -33,6 +33,10 @@ class SpiderMain():
             if craw_rank:
                 self.spider.craw_rank(extend_keywords_only=extend_keywords_only,
                                       products_only=products_only)
+            if craw_p4p:
+                self.spider.craw_p4p()
+                self.generate_p4p_csv()
+
             if generate_csv:
                 self.generate_csv(extend_keywords_only=extend_keywords_only,
                                   products_only=products_only)
@@ -185,7 +189,7 @@ class SpiderMain():
 
     def generate_unused_keywords_csv(self):
         csv_header = ["关键词", "第一位排名", "第一产品", "供应商竞争度", "橱窗数", "热搜度"]
-        csv_file = "./csv/unused_keywords_report.csv"
+        csv_file = "./csv/未使用关键词-" + datetime.datetime.now().strftime("%Y%m%d") + ".csv"
         keywords = self.database.get_keywords()
         used_keywords = self.spider.get_keywords()
         with open(csv_file, "w", encoding='utf-8-sig') as f:
@@ -219,7 +223,7 @@ class SpiderMain():
 
     def generate_month_new_keywords_csv(self):
         csv_header = ["关键词", "第一位排名", "第一产品", "供应商竞争度", "橱窗数", "热搜度"]
-        csv_file = "./csv/month_new_keywords_report.csv"
+        csv_file = "./csv/月新增关键词-" + datetime.datetime.now().strftime("%Y%m%d") + ".csv"
         keywords = self.database.get_keywords()
         used_keywords = self.spider.get_keywords()
         with open(csv_file, "w", encoding='utf-8-sig') as f:
@@ -252,9 +256,20 @@ class SpiderMain():
                     writer.writerow([t_keyword, t_top1_ranking, t_top1_style_no, t_company_cnt,
                                      t_showwin_cnt, srh_pv_this_mon])
 
+    def generate_p4p_csv(self):
+        csv_header = ["关键词", "推广评分", "关键词组", "状态"]
+        csv_file = "./csv/p4p-" + datetime.datetime.now().strftime("%Y%m%d") + ".csv"
+        p4ps = self.database.get_p4ps()
+        with open(csv_file, "w", encoding='utf-8-sig') as f:
+            writer = csv.writer(f)
+            writer.writerow(csv_header)
+            for item in p4ps:
+                writer.writerow([item.keyword, item.qs_star, item.tag, item.is_start])
+
 if __name__ == "__main__":
     db = Database()
     spider_main = SpiderMain(db)
-    # spider_main.craw(craw_rank=True)
-    spider_main.generate_month_new_keywords_csv()
+    spider_main.craw(craw_p4p=True)
+    # spider_main.generate_unused_keywords_csv()
+    # spider_main.generate_month_new_keywords_csv()
     db.close()

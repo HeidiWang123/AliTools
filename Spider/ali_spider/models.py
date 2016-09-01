@@ -46,6 +46,14 @@ class Rank(Base):
     ranking = Column('ranking', String)
     update = Column('update', Date)
 
+class P4P(Base):
+    __tablename__ = "p4p"
+
+    keyword = Column('keyword', String, primary_key=True)
+    qs_star = Column('qs_star', Integer)
+    is_start = Column('is_start', Boolean)
+    tag = Column('tag', String)
+
 class Database():
     session = None
     def __init__(self):
@@ -88,6 +96,15 @@ class Database():
             else:
                 self.session.add(keyword)
         self.session.commit()
+
+    def add_p4ps(self, p4ps):
+        if p4ps is None or len(p4ps) == 0:
+            return
+        self.session.add_all(p4ps)
+        self.session.commit()
+
+    def get_p4ps(self):
+        return self.session.query(P4P).all()
 
     def rank_exsit_unneed_update(self, keyword):
         record = self.session.query(Rank).filter_by(keyword=keyword).first()
@@ -141,6 +158,10 @@ class Database():
 
     def clear_products(self):
         self.session.query(Product).delete()
+        self.session.commit()
+
+    def clear_p4p(self):
+        self.session.query(P4P).delete()
         self.session.commit()
 
     def close(self):

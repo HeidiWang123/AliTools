@@ -4,7 +4,7 @@
 import math
 import json
 from datetime import datetime, date
-from models import Product, Rank, Keyword
+from models import Product, Rank, Keyword, P4P
 
 def parse_product(response, page_size):
     """产品结果解析器
@@ -89,6 +89,24 @@ def parse_keyword(response, page, page_size, negative_keywords):
         keywords.append(keyword)
 
     return next_page, keywords
+
+def parse_p4p(response):
+    resp_json = response.json()
+
+    total_page = resp_json['totalPage']
+    current_page = resp_json['currentPage']
+    next_page = current_page + 1 if current_page < total_page else None
+
+    p4ps = list()
+    data = resp_json['data']
+    for item in data:
+        p4ps.append(P4P(
+            keyword=item['keyword'],
+            qs_star=item['qsStar'],
+            is_start=(item['state']=="1"),
+            tag=str(item['tag']),
+        ))
+    return next_page, p4ps
 
 def _product_from_json(json_item):
     """将 json 拼装成产品对象并返回

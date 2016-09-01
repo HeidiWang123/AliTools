@@ -118,6 +118,49 @@ class Spider():
             new_request = self._prepare_rank_request(keyword=keyword)
             manager.add_request(new_request)
 
+    def craw_p4p(self):
+        self.db.clear_p4p()
+        manager = RequestManager()
+        csrf_token = self._get_p4p_csrf_token()
+        page = 1
+        first_request = self._prepare_p4p_request(page=page, csrf_token=csrf_token)
+        manager.add_request(first_request)
+
+        while manager.has_request():
+            print('[P4P] %02d' % page, end=" ")
+
+            new_request = manager.get_request()
+            response = self.send_request(new_request)
+            page, p4ps = parser.parse_p4p(response=response)
+            self.db.add_p4ps(p4ps)
+            print("[done]")
+
+            if page is None :
+                break
+            new_request = self._prepare_p4p_request(page=page, csrf_token=csrf_token)
+            manager.add_request(new_request)
+
+    def _prepare_p4p_request(self, page, csrf_token):
+        url = "http://www2.alibaba.com/asyGetAdKeyword.do"
+        headers = {
+            'Host': 'www2.alibaba.com',
+            'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64; rv:48.0) Gecko/20100101 Firefox/48.0',
+            'Accept': 'application/json, text/javascript, */*; q=0.01',
+            'Accept-Language': 'zh-CN,en-US;q=0.7,en;q=0.3',
+            'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+            'X-Requested-With': 'XMLHttpRequest',
+            'Referer': 'http://www2.alibaba.com/manage_ad_keyword.htm',
+            'Connection': 'keep-alive',
+        }
+        data = {
+            'json': '{"status":"all","cost":"all","click":"all","exposure":"all","cpc":"all",\
+"qsStar":"all","kw":"","isExact":"N","date":7,"tagId":-1,"delayShow":false,"recStrategy":1,\
+"recType":"recommend","currentPage":%d}' % page,
+            '_csrf_token_': csrf_token,
+        }
+        req = requests.Request('POST', url, data=data, headers=headers, cookies=self.cookies)
+        return req.prepare()
+
     def _prepare_products_request(self, csrf_token, page, page_size):
         url = "http://hz-productposting.alibaba.com/product/managementproducts/asyQueryProductsList.do"
         headers = {
@@ -192,6 +235,13 @@ class Spider():
         pattern = r"(?<={'_csrf_token_':')\w+(?='})"
         product_csrf_token = re.search(pattern, html).group(0)
         return product_csrf_token
+
+    def _get_p4p_csrf_token(self):
+        url = "http://www2.alibaba.com/manage_ad_keyword.htm"
+        html = self.session.get(url).text
+        pattern = r"(?<='_csrf_token_': ')\w+(?=')"
+        csrf_token = re.search(pattern, html).group(0)
+        return csrf_token
 
     def _create_session(self):
         """创建 requests session"""
