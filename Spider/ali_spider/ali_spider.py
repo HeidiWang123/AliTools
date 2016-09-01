@@ -54,19 +54,17 @@ class SpiderMain():
             products = self.database.get_products()
             extend_keywords = self.spider.get_keywords(extend_keywords_only=True)
             if extend_keywords_only:
-                self._write_keywords(writer=writer, keywords=extend_keywords, products=products)
+                self._write_keywords(writer=writer, keywords=extend_keywords)
                 return
             if products_only:
                 self._write_products(writer=writer, products=products)
                 return
             self._write_products(writer=writer, products=products)
-            self._write_keywords(writer=writer, keywords=extend_keywords, products=products)
+            self._write_keywords(writer=writer, keywords=extend_keywords)
 
-    def _write_keywords(self, writer, keywords, products):
+    def _write_keywords(self, writer, keywords):
         for keyword in keywords:
-            rank_info = self.database.get_keyword_rank_info(keyword=keyword)
-            t_top1_style_no, t_top1_ranking = self._get_top_rank_info(rank_info=rank_info,
-                                                                      products=products)
+            t_top1_style_no, t_top1_ranking = self._get_top1_rank_info(keyword=keyword)
             t_is_p4p_keyword = None
             t_company_cnt = None
             t_showwin_cnt = None
@@ -83,8 +81,7 @@ class SpiderMain():
                      t_keyword=keyword,
                      t_top1_style_no=t_top1_style_no,
                      t_top1_ranking=t_top1_ranking,
-                     t_top1_modify_time=self._get_product_modify_time(style_no=t_top1_style_no,
-                                                                      products=products),
+                     t_top1_modify_time=self.database.get_product_modify_time(style_no=t_top1_style_no),
                      t_is_p4p_keyword=t_is_p4p_keyword,
                      t_company_cnt=t_company_cnt,
                      t_showwin_cnt=t_showwin_cnt,
@@ -96,8 +93,7 @@ class SpiderMain():
             product_keywords = map(str.strip, product.keywords.split(','))
             for product_keyword in product_keywords:
                 t_product_ranking, t_top1_style_no, t_top1_ranking = self._get_rank_info(
-                    rank_info=self.database.get_keyword_rank_info(keyword=product_keyword),
-                    product_id=product.id, products=products)
+                    keyword=product_keyword, product_id=product.id)
                 keyword_info = self.database.get_keyword(value=product_keyword)
                 t_is_p4p_keyword = None
                 t_company_cnt = None
@@ -136,12 +132,6 @@ class SpiderMain():
 
     def _writerow(self, writer, **info):
         t_keyword = info.get('t_keyword', None)
-        if t_keyword is None:
-            print("keyword is None, ignored.")
-            return
-        if t_keyword is 'dress belt':
-            print(t_keyword)
-            return
         t_owner = info.get('t_owner', None)
         t_style_no = info.get('t_style_no', None)
         t_product_ranking = info.get('t_product_ranking', None if t_style_no is None else '-')
@@ -167,36 +157,104 @@ class SpiderMain():
                          t_is_window_product, t_is_p4p_keyword, t_company_cnt,
                          t_showwin_cnt, t_srh_pv])
 
-    def _get_rank_info(self, rank_info, products, product_id):
-        product_ranking = '-'
-        if rank_info is not None and len(rank_info) > 0:
-            for item in rank_info:
-                if str(item['product_id']) == str(product_id):
-                    product_ranking = item['ranking']
-                    break
-        top1_style_no, top1_ranking = self._get_top_rank_info(rank_info=rank_info, products=products)
+    def _get_rank_info(self, keyword, product_id):
+        ranking, top1_style_no, top1_ranking = (None, None, None)
+
+        rank_info = self.database.get_keyword_rank_info(keyword)
+        if rank_info is None:
+            return ranking, top1_style_no, top1_ranking
+
+        for item in rank_info:
+            if item['product_id'] == product_id:
+                product_ranking = item['ranking']
+                break
+
+        top1_style_no, top1_ranking = self._get_top1_rank_info(rank_info=rank_info)
         return product_ranking, top1_style_no, top1_ranking
 
-    def _get_top_rank_info(self, rank_info, products):
-        top1_style_no = '-'
-        top1_ranking = '-'
+    def _get_top1_rank_info(self, keyword=None, rank_info=None):
+        top1_style_no, top1_ranking = (None, None)
+        if rank_info is None and keyword is not None:
+            rank_info = self.database.get_keyword_rank_info(keyword)
         if rank_info is None:
             return top1_style_no, top1_ranking
-
         top1_rank_info = sorted(rank_info, key=lambda x: x['ranking'])[0]
+        top1_style_no = self.database.get_style_no_by_id(top1_rank_info['product_id'])
         top1_ranking = top1_rank_info['ranking']
-        for p in products:
-            if str(p.id) == str(top1_rank_info['product_id']):
-                top1_style_no = p.style_no
-                break
         return top1_style_no, top1_ranking
 
+    def generate_unused_keywords_csv(self):
+        csv_header = ["关键词", "第一位排名", "第一产品", "供应商竞争度", "橱窗数", "热搜度"]
+        csv_file = "./csv/unused_keywords_report.csv"
+        keywords = self.database.get_keywords()
+        used_keywords = self.spider.get_keywords()
+        with open(csv_file, "w", encoding='utf-8-sig') as f:
+            writer = csv.writer(f)
+            writer.writerow(csv_header)
+            for item in keywords:
+                keyword = item.value
+                if keyword not in used_keywords:
+
+                    t_keyword = keyword
+                    t_top1_style_no, t_top1_ranking = self._get_top1_rank_info(keyword=keyword)
+                    t_company_cnt = item.company_cnt
+                    t_showwin_cnt = item.showwin_cnt
+                    t_srh_pv = json.loads(item.srh_pv)['srh_pv_this_mon']
+
+                    none_value = {
+                        't_top1_ranking': '-',
+                        't_top1_style_no': '-',
+                        't_company_cnt': '-',
+                        't_showwin_cnt': '-',
+                        't_srh_pv': '-',
+                    }
+                    t_top1_ranking = none_value['t_top1_ranking'] if t_top1_ranking is None else t_top1_ranking
+                    t_top1_style_no = none_value['t_top1_style_no'] if t_top1_style_no is None else t_top1_style_no
+                    t_company_cnt = none_value['t_company_cnt'] if t_company_cnt is None else t_company_cnt
+                    t_showwin_cnt = none_value['t_showwin_cnt'] if t_showwin_cnt is None else t_showwin_cnt
+                    t_srh_pv = none_value['t_srh_pv'] if t_srh_pv is None else t_srh_pv
+
+                    writer.writerow([t_keyword, t_top1_ranking, t_top1_style_no, t_company_cnt,
+                                     t_showwin_cnt, t_srh_pv])
+
     def generate_month_new_keywords_csv(self):
-        # TODO:
-        pass
+        csv_header = ["关键词", "第一位排名", "第一产品", "供应商竞争度", "橱窗数", "热搜度"]
+        csv_file = "./csv/month_new_keywords_report.csv"
+        keywords = self.database.get_keywords()
+        used_keywords = self.spider.get_keywords()
+        with open(csv_file, "w", encoding='utf-8-sig') as f:
+            writer = csv.writer(f)
+            writer.writerow(csv_header)
+            for item in keywords:
+                keyword = item.value
+                if keyword not in used_keywords:
+                    t_srh_pv = json.loads(item.srh_pv)
+                    srh_pv_this_mon = t_srh_pv['srh_pv_this_mon']
+                    if int(t_srh_pv['srh_pv_last_1mon']) > 0:
+                        continue
+                    t_keyword = keyword
+                    t_top1_style_no, t_top1_ranking = self._get_top1_rank_info(keyword=keyword)
+                    t_company_cnt = item.company_cnt
+                    t_showwin_cnt = item.showwin_cnt
+                    none_value = {
+                        't_top1_ranking': '-',
+                        't_top1_style_no': '-',
+                        't_company_cnt': '-',
+                        't_showwin_cnt': '-',
+                        'srh_pv_this_mon': '-',
+                    }
+                    t_top1_ranking = none_value['t_top1_ranking'] if t_top1_ranking is None else t_top1_ranking
+                    t_top1_style_no = none_value['t_top1_style_no'] if t_top1_style_no is None else t_top1_style_no
+                    t_company_cnt = none_value['t_company_cnt'] if t_company_cnt is None else t_company_cnt
+                    t_showwin_cnt = none_value['t_showwin_cnt'] if t_showwin_cnt is None else t_showwin_cnt
+                    srh_pv_this_mon = none_value['t_srh_pv'] if srh_pv_this_mon is None else srh_pv_this_mon
+
+                    writer.writerow([t_keyword, t_top1_ranking, t_top1_style_no, t_company_cnt,
+                                     t_showwin_cnt, srh_pv_this_mon])
 
 if __name__ == "__main__":
     db = Database()
     spider_main = SpiderMain(db)
-    spider_main.craw(craw_rank=True)
+    # spider_main.craw(craw_rank=True)
+    spider_main.generate_month_new_keywords_csv()
     db.close()

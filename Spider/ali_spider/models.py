@@ -1,5 +1,6 @@
 import json
-from datetime import datetime, date, timedelta
+import re
+from datetime import datetime, date
 from sqlalchemy import Integer, String, Date, DateTime, Boolean
 from sqlalchemy import Column, create_engine
 from sqlalchemy.orm import sessionmaker
@@ -117,15 +118,26 @@ class Database():
     def get_products(self):
         return self.session.query(Product).all()
 
+    def get_product_modify_time(self, product_id=None, style_no=None):
+        return self.session.query(Product.modify_time).filter_by(id=product_id,
+                                                                 style_no=style_no).scalar()
+
     def get_keyword_rank_info(self, keyword):
-        rank = self.session.query(Rank).filter_by(keyword=keyword.lower()).first()
+        keyword = re.sub(" +", " ", keyword.lower())
+        rank = self.session.query(Rank).filter_by(keyword=keyword).first()
         if rank is None or rank.ranking is None:
             return None
         return json.loads(rank.ranking)
 
+    def get_style_no_by_id(self, product_id):
+        return self.session.query(Product.style_no).filter_by(id=product_id).scalar()
+
     def get_keyword(self, value):
         keyword = self.session.query(Keyword).filter_by(value=value).first()
         return keyword
+
+    def get_keywords(self):
+        return self.session.query(Keyword).all()
 
     def clear_products(self):
         self.session.query(Product).delete()
