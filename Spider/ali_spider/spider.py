@@ -218,7 +218,7 @@ class Spider():
             'Upgrade-Insecure-Requests': '1',
         }
         r = session.get('http://i.alibaba.com/index.htm', allow_redirects=False)
-        if r.status_code == requests.codes.moved_permanently:
+        if r.status_code != requests.codes.ok:
             self.cookies = self._get_cookies(disable_cache=True)
         return session
 

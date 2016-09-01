@@ -222,5 +222,6 @@ if __name__ == "__main__":
     db = Database()
     spider_main = SpiderMain(db)
     # spider_main.craw_products_rank()
-    spider_main.generate_csv()
+    spider_main.craw_exntend_keywords_rank()
+    # spider_main.generate_csv()
     db.close()
