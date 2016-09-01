@@ -269,7 +269,9 @@ class SpiderMain():
 if __name__ == "__main__":
     db = Database()
     spider_main = SpiderMain(db)
-    spider_main.craw(craw_p4p=True)
+    # spider_main.craw(craw_products=True, craw_keywords=True, craw_rank=True, craw_p4p=True)
+    # spider_main.spider.craw_keywords(index=2269, page=1)
+    spider_main.spider.craw_rank()
     # spider_main.generate_unused_keywords_csv()
     # spider_main.generate_month_new_keywords_csv()
     db.close()

@@ -1,10 +1,12 @@
 import json
 import re
 from datetime import datetime, date
+from dateutil.relativedelta import relativedelta
 from sqlalchemy import Integer, String, Date, DateTime, Boolean
-from sqlalchemy import Column, create_engine
+from sqlalchemy import Column, create_engine, exists
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.sql import and_
 from tzlocal import get_localzone
 from pytz import timezone
 
@@ -21,6 +23,7 @@ class Product(Base):
     keywords = Column('keywords', String)
     owner = Column('owner', String)
     modify_time = Column('modify_time', Date)
+    update = Column('update', Date, default=date.today)
     is_trade_product = Column('is_trade_product', Boolean)
     is_window_product = Column('is_window_product', Boolean)
 
@@ -42,9 +45,9 @@ class Rank(Base):
 
     __tablename__ = "rank"
 
-    keyword = Column('keyword_value', String, primary_key=True)
+    keyword = Column('keyword', String, primary_key=True)
     ranking = Column('ranking', String)
-    update = Column('update', Date)
+    update = Column('update', Date, default=date.today)
 
 class P4P(Base):
     __tablename__ = "p4p"
@@ -116,15 +119,15 @@ class Database():
             is_day2update = date.today() > record.update
         return record is not None and not is_day2update
 
-    def keyword_exsit_unneed_update(self, keyword):
-        record = self.session.query(Keyword).filter_by(value=keyword).first()
-        if record is None:
-            return False
+    def is_keyword_need_update(self, keyword):
+        keyword = re.sub(" +", " ", keyword.lower())
+        current_pst = datetime.now(get_localzone()).astimezone(timezone('US/Pacific'))
+        month_ago = current_pst + relativedelta(months=-1)
+        return self.session.query(exists().where(and_(Keyword.update<month_ago,
+                                                      Keyword.value==keyword))).scalar()
 
-        tzpdt = timezone('US/Pacific')
-        next_month = record.update.replace(month=record.update.month+1).replace(tzinfo=tzpdt)
-        local_time = datetime.now(get_localzone())
-        return record is not None and next_month < local_time
+    def is_products_need_update(self):
+        return self.session.query(exists().where(Product.update < date.today())).scalar()
 
     def get_product_keywords(self):
         keywords = set()

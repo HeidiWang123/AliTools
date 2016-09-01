@@ -27,12 +27,18 @@ class Spider():
         self.session = self._create_session()
 
     def craw_products(self, page=1):
+        if not self.db.is_products_need_update():
+            print("[Product] unneed update")
+            return
+
         page_size = 50
         csrf_token = self._get_product_csrf_token()
         manager = RequestManager()
 
         first_request = self._prepare_products_request(csrf_token=csrf_token, page=page, page_size=page_size)
         manager.add_request(first_request)
+
+
         self.db.clear_products()
         while manager.has_request():
             print("[Product] %02d" % page, end=" ")
@@ -65,13 +71,13 @@ class Spider():
             print('[Keyword] %04d-%03d:"%s"' % (index, page, keyword), end=" ")
 
             new_request = keyword_manager.get_request()
-            if self.db.keyword_exsit_unneed_update(keyword):
-                print('is exist & unneed update', end=" ")
-                page = None
-            else:
+            if self.db.is_keyword_need_update(keyword):
                 response = self.send_request(new_request)
                 page, page_keywords = parser.parse_keyword(response, page, page_size, negative_keywords)
                 self.db.upsert_keywords(page_keywords)
+            else:
+                print('is exist & unneed update', end=" ")
+                page = None
             print("[done]")
 
             if page is None:
@@ -90,13 +96,14 @@ class Spider():
                                      products_only=products_only)
         keywords = [re.sub(" +", " ", x.lower()) for x in keywords]
         keyword = keywords[index]
+        ctoken = self._get_ctoken()
         manager = RequestManager()
 
         if index >= len(keywords):
             print('index over range')
             return
 
-        first_request = self._prepare_rank_request(keyword=keyword)
+        first_request = self._prepare_rank_request(keyword=keyword, ctoken=ctoken)
         manager.add_request(first_request)
 
         while manager.has_request():
@@ -115,7 +122,7 @@ class Spider():
             if index is None or index >= len(keywords):
                 break
             keyword = keywords[index]
-            new_request = self._prepare_rank_request(keyword=keyword)
+            new_request = self._prepare_rank_request(keyword=keyword, ctoken=ctoken)
             manager.add_request(new_request)
 
     def craw_p4p(self):
@@ -211,8 +218,13 @@ class Spider():
         req = requests.Request('POST', url, data=data, headers=headers, cookies=self.cookies)
         return req.prepare()
 
-    def _prepare_rank_request(self, keyword):
-        url = "http://hz-mydata.alibaba.com/self/.json?action=CommonAction&iName=getKeywordSearchProducts"
+    def _prepare_rank_request(self, keyword, ctoken):
+        url = "http://hz-mydata.alibaba.com/self/.json"
+        params = {
+            "iName": "getKeywordSearchProducts",
+            "action": "CommonAction",
+            "ctoken": ctoken,
+        }
         headers = {
             'Host': 'hz-mydata.alibaba.com',
             'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64; rv:48.0) Gecko/20100101 Firefox/48.0',
@@ -226,7 +238,7 @@ class Spider():
         data = {
             'keyword': keyword,
         }
-        req = requests.Request('POST', url, data=data, headers=headers, cookies=self.cookies)
+        req = requests.Request('POST', url, params=params, data=data, headers=headers, cookies=self.cookies)
         return req.prepare()
 
     def _get_product_csrf_token(self):
@@ -307,6 +319,13 @@ class Spider():
             cookies.set_cookie(cookiejar)
 
         return cookies
+
+    def _get_ctoken(self):
+        if self.cookies is None:
+            return None
+        for cookie in self.cookies:
+            if cookie.name == 'ctoken':
+                return cookie.value
 
     def get_keywords(self, extend_keywords_only=False, products_only=False):
         extend_keywords = self.get_extend_keywords()

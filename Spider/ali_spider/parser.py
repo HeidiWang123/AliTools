@@ -3,7 +3,7 @@
 
 import math
 import json
-from datetime import datetime, date
+from datetime import datetime
 from models import Product, Rank, Keyword, P4P
 
 def parse_product(response, page_size):
@@ -26,7 +26,7 @@ def parse_rank(response, index, keywords):
     """rank 结果解析器
     """
     keyword = keywords[index]
-    rank = Rank(keyword=keyword, update=date.today())
+    rank = Rank(keyword=keyword)
 
     json_ranks = response.json()['value']
     if json_ranks is not None and len(json_ranks) > 0:
@@ -64,7 +64,10 @@ def parse_keyword(response, page, page_size, negative_keywords):
         company_cnt = item['company_cnt']
         showwin_cnt = item['showwin_cnt']
         update = datetime.strptime(item['yyyymm']+'03 09:00:00-0800', '%Y%m%d %H:%M:%S%z')
-        is_p4p_keyword = item['isP4pKeyword']
+        is_p4p_keyword = item.get('isP4pKeyword', None)
+        if is_p4p_keyword is None:
+            # 如果为空则重试
+            return page, None
         srh_pv = json.dumps({'srh_pv_this_mon': item['srh_pv_this_mon'],
                              'srh_pv_last_1mon': item['srh_pv_last_1mon'],
                              'srh_pv_last_2mon': item['srh_pv_last_2mon'],
