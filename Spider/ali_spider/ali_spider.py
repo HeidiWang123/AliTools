@@ -51,7 +51,7 @@ class SpiderMain():
         csv_header = ["关键词", "负责人", "产品编号", "产品排名", "第一位排名", "第一产品",
                       "最后更新日期", "贸易表现", "橱窗", "P4P", "供应商竞争度", "橱窗数", "热搜度"]
 
-        csv_file = "./csv/alibaba" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S") + ".csv"
+        csv_file = "./csv/alibaba" + datetime.datetime.now().strftime("%Y%m%d") + ".csv"
         with open(csv_file, "w", encoding='utf-8-sig') as f:
             writer = csv.writer(f)
             writer.writerow(csv_header)
@@ -98,6 +98,7 @@ class SpiderMain():
             for product_keyword in product_keywords:
                 t_product_ranking, t_top1_style_no, t_top1_ranking = self._get_rank_info(
                     keyword=product_keyword, product_id=product.id)
+
                 keyword_info = self.database.get_keyword(value=product_keyword)
                 t_is_p4p_keyword = None
                 t_company_cnt = None
@@ -138,10 +139,20 @@ class SpiderMain():
         t_keyword = info.get('t_keyword', None)
         t_owner = info.get('t_owner', None)
         t_style_no = info.get('t_style_no', None)
-        t_product_ranking = info.get('t_product_ranking', None if t_style_no is None else '-')
-        t_top1_ranking = info.get('t_top1_ranking', '-')
-        t_top1_style_no = info.get('t_top1_style_no', '-')
+
+        t_product_ranking = info.get('t_product_ranking', None)
+        if t_style_no is None:
+            t_product_ranking = None
+        elif t_product_ranking is None:
+            t_product_ranking = '-'
+
+        t_top1_style_no = info.get('t_top1_style_no', None)
+        t_top1_ranking = info.get('t_top1_ranking', None)
         t_top1_modify_time = info.get('t_top1_modify_time', None)
+        t_top1_style_no = '-' if t_top1_style_no is None else t_top1_style_no
+        t_top1_ranking = '-' if t_top1_ranking is None else t_top1_ranking
+        t_top1_modify_time = '-' if t_top1_modify_time is None else t_top1_modify_time
+
         t_is_trade_product = info.get('t_is_trade_product', None)
         t_is_window_product = info.get('t_is_window_product', None)
         t_is_p4p_keyword = info.get('t_is_p4p_keyword', None)
@@ -170,11 +181,11 @@ class SpiderMain():
 
         for item in rank_info:
             if item['product_id'] == product_id:
-                product_ranking = item['ranking']
+                ranking = item['ranking']
                 break
 
         top1_style_no, top1_ranking = self._get_top1_rank_info(rank_info=rank_info)
-        return product_ranking, top1_style_no, top1_ranking
+        return ranking, top1_style_no, top1_ranking
 
     def _get_top1_rank_info(self, keyword=None, rank_info=None):
         top1_style_no, top1_ranking = (None, None)
@@ -271,7 +282,7 @@ if __name__ == "__main__":
     spider_main = SpiderMain(db)
     # spider_main.craw(craw_products=True, craw_keywords=True, craw_rank=True, craw_p4p=True)
     # spider_main.spider.craw_keywords(index=2269, page=1)
-    spider_main.spider.craw_rank()
+    spider_main.generate_csv()
     # spider_main.generate_unused_keywords_csv()
     # spider_main.generate_month_new_keywords_csv()
     db.close()
