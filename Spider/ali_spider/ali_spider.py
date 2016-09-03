@@ -19,8 +19,8 @@ os.environ["PATH"] += os.pathsep + webdriver_path
 class SpiderMain():
 
     def __init__(self, database, init_spider=True):
-        self.database = database
-        self.spider = Spider(self.database) if init_spider else None
+        self.db = database
+        self.spider = Spider(self.db) if init_spider else None
 
     def craw(self, craw_products=False, craw_keywords=False, craw_rank=False, craw_p4p=False,
              extend_keywords_only=False, products_only=False, generate_csv=False):
@@ -55,8 +55,8 @@ class SpiderMain():
         with open(csv_file, "w", encoding='utf-8-sig') as f:
             writer = csv.writer(f)
             writer.writerow(csv_header)
-            products = self.database.get_products()
-            extend_keywords = self.spider.get_keywords(extend_keywords_only=True)
+            products = self.db.get_products()
+            extend_keywords = self.db.get_all_keywords(extend_keywords_only=True)
             if extend_keywords_only:
                 self._write_keywords(writer=writer, keywords=extend_keywords)
                 return
@@ -73,7 +73,7 @@ class SpiderMain():
             t_company_cnt = None
             t_showwin_cnt = None
             t_srh_pv = None
-            keyword_info = self.database.get_keyword(value=keyword)
+            keyword_info = self.db.get_keyword(value=keyword)
             if keyword_info is not None:
                 srh_pv = json.loads(keyword_info.srh_pv)
                 t_is_p4p_keyword = keyword_info.is_p4p_keyword
@@ -85,7 +85,7 @@ class SpiderMain():
                      t_keyword=keyword,
                      t_top1_style_no=t_top1_style_no,
                      t_top1_ranking=t_top1_ranking,
-                     t_top1_modify_time=self.database.get_product_modify_time(style_no=t_top1_style_no),
+                     t_top1_modify_time=self.db.get_product_modify_time(style_no=t_top1_style_no),
                      t_is_p4p_keyword=t_is_p4p_keyword,
                      t_company_cnt=t_company_cnt,
                      t_showwin_cnt=t_showwin_cnt,
@@ -99,7 +99,7 @@ class SpiderMain():
                 t_product_ranking, t_top1_style_no, t_top1_ranking = self._get_rank_info(
                     keyword=product_keyword, product_id=product.id)
 
-                keyword_info = self.database.get_keyword(value=product_keyword)
+                keyword_info = self.db.get_keyword(value=product_keyword)
                 t_is_p4p_keyword = None
                 t_company_cnt = None
                 t_showwin_cnt = None
@@ -175,7 +175,7 @@ class SpiderMain():
     def _get_rank_info(self, keyword, product_id):
         ranking, top1_style_no, top1_ranking = (None, None, None)
 
-        rank_info = self.database.get_keyword_rank_info(keyword)
+        rank_info = self.db.get_keyword_rank_info(keyword)
         if rank_info is None:
             return ranking, top1_style_no, top1_ranking
 
@@ -190,18 +190,18 @@ class SpiderMain():
     def _get_top1_rank_info(self, keyword=None, rank_info=None):
         top1_style_no, top1_ranking = (None, None)
         if rank_info is None and keyword is not None:
-            rank_info = self.database.get_keyword_rank_info(keyword)
+            rank_info = self.db.get_keyword_rank_info(keyword)
         if rank_info is None:
             return top1_style_no, top1_ranking
         top1_rank_info = sorted(rank_info, key=lambda x: x['ranking'])[0]
-        top1_style_no = self.database.get_style_no_by_id(top1_rank_info['product_id'])
+        top1_style_no = self.db.get_style_no_by_id(top1_rank_info['product_id'])
         top1_ranking = top1_rank_info['ranking']
         return top1_style_no, top1_ranking
 
     def generate_unused_keywords_csv(self):
         csv_header = ["关键词", "第一位排名", "第一产品", "供应商竞争度", "橱窗数", "热搜度"]
         csv_file = "./csv/未使用关键词-" + datetime.datetime.now().strftime("%Y%m%d") + ".csv"
-        keywords = self.database.get_keywords()
+        keywords = self.db.get_keywords()
         used_keywords = self.spider.get_keywords()
         with open(csv_file, "w", encoding='utf-8-sig') as f:
             writer = csv.writer(f)
@@ -235,7 +235,7 @@ class SpiderMain():
     def generate_month_new_keywords_csv(self):
         csv_header = ["关键词", "第一位排名", "第一产品", "供应商竞争度", "橱窗数", "热搜度"]
         csv_file = "./csv/月新增关键词-" + datetime.datetime.now().strftime("%Y%m%d") + ".csv"
-        keywords = self.database.get_keywords()
+        keywords = self.db.get_keywords()
         used_keywords = self.spider.get_keywords()
         with open(csv_file, "w", encoding='utf-8-sig') as f:
             writer = csv.writer(f)
@@ -270,7 +270,7 @@ class SpiderMain():
     def generate_p4p_csv(self):
         csv_header = ["关键词", "推广评分", "关键词组", "状态"]
         csv_file = "./csv/p4p-" + datetime.datetime.now().strftime("%Y%m%d") + ".csv"
-        p4ps = self.database.get_p4ps()
+        p4ps = self.db.get_p4ps()
         with open(csv_file, "w", encoding='utf-8-sig') as f:
             writer = csv.writer(f)
             writer.writerow(csv_header)
@@ -280,7 +280,7 @@ class SpiderMain():
     def generate_month_keywords_csv(self):
         csv_header = ["关键词", "供应商竞争度", "橱窗数", "热搜度"]
         csv_file = "./csv/关键词-" + datetime.datetime.now().strftime("%Y%m") + ".csv"
-        keywords = self.database.get_keywords()
+        keywords = self.db.get_keywords()
         with open(csv_file, "w", encoding='utf-8-sig') as f:
             writer = csv.writer(f)
             writer.writerow(csv_header)

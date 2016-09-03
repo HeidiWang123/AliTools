@@ -57,9 +57,9 @@ class Spider():
             manager.add_request(next_request)
 
     def craw_keywords(self, index=0, page=1, extend_keywords_only=False, products_only=False):
-        keywords = self.get_keywords(extend_keywords_only=extend_keywords_only,
+        keywords = self.db.get_all_keywords(extend_keywords_only=extend_keywords_only,
                                      products_only=products_only)
-        negative_keywords = self.get_negative_keywords()
+        negative_keywords = self.db.get_negative_keywords()
         keyword_manager = RequestManager()
 
         page_size = 10
@@ -92,8 +92,8 @@ class Spider():
             keyword_manager.add_request(next_request)
 
     def craw_rank(self, index=0, extend_keywords_only=False, products_only=False):
-        keywords = self.get_keywords(extend_keywords_only=extend_keywords_only,
-                                     products_only=products_only)
+        keywords = self.db.get_all_keywords(extend_keywords_only=extend_keywords_only,
+                                            products_only=products_only)
         keywords = [re.sub(" +", " ", x.lower()) for x in keywords]
         keyword = keywords[index]
         ctoken = self._get_ctoken()
@@ -326,36 +326,6 @@ class Spider():
         for cookie in self.cookies:
             if cookie.name == 'ctoken':
                 return cookie.value
-
-    def get_keywords(self, extend_keywords_only=False, products_only=False):
-        products_keywords = self.db.get_product_keywords()
-        if products_only:
-            return sorted(set(products_keywords))
-
-        extend_keywords = self.get_extend_keywords()
-        if extend_keywords_only:
-            return sorted(set(extend_keywords))
-
-        base_keywords = self.db.get_base_file_keywords()
-        negative_keywords = self.get_negative_keywords()
-        keywords = []
-        keywords.extend(base_keywords)
-        keywords.extend(products_keywords)
-        if negative_keywords is not None and len(negative_keywords) > 0:
-            keywords = [x for x in keywords if x not in negative_keywords]
-        return sorted(set(keywords))
-
-    def get_extend_keywords(self):
-        extend_keywords = None
-        with open('./config/extend_keywords.txt', 'r') as f:
-            extend_keywords = f.read().splitlines()
-        return extend_keywords
-
-    def get_negative_keywords(self):
-        negative_keywords = None
-        with open('./config/negative_keywords.txt', 'r') as f:
-            negative_keywords = f.read().splitlines()
-        return negative_keywords
 
     def send_request(self, request):
         # 每次请求之间需要有一定的时间间隔
