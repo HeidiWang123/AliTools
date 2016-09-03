@@ -8,26 +8,33 @@ import os
 import pickle
 import http.cookiejar
 import random
-from http.client import HTTPConnection
+import http
 import requests
 from selenium import webdriver
 from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
-import selenium.webdriver.support.ui as ui
 from selenium.common.exceptions import TimeoutException
+import selenium.webdriver.support.ui as ui
 import parser
+import settings
 
-HTTPConnection.debuglevel = 0
 
 class Spider():
     """爬虫类"""
 
-    def __init__(self, db):
-        self.db = db
+    def __init__(self, database):
+        self.database = database
         self.cookies = self._get_cookies()
         self.session = self._create_session()
+        http.client.HTTPConnection.debuglevel = settings.HTTP_DEBUGLEVEL
 
     def craw_products(self, page=1):
-        if not self.db.is_products_need_update():
+        """craw products
+
+        Args:
+            page (int): beging page from craw.
+
+        """
+        if not self.database.is_products_need_update():
             print("[Product] unneed update")
             return
 
@@ -35,31 +42,46 @@ class Spider():
         csrf_token = self._get_product_csrf_token()
         manager = RequestManager()
 
-        first_request = self._prepare_products_request(csrf_token=csrf_token, page=page, page_size=page_size)
+        first_request = self._prepare_products_request(
+            csrf_token=csrf_token,
+            page=page,
+            page_size=page_size
+        )
         manager.add_request(first_request)
 
 
-        self.db.clear_products()
+        self.database.clear_products()
         while manager.has_request():
             print("[Product] %02d" % page, end=" ")
 
             new_request = manager.get_request()
-            response = self.send_request(new_request)
+            response = self._send_request(new_request)
 
             page, products = parser.parse_product(response, page_size)
-            self.db.upsert_products(products)
+            self.database.add_products(products)
             print("[done]")
 
             if page is None:
                 break
 
-            next_request = self._prepare_products_request(csrf_token=csrf_token, page=page, page_size=page_size)
+            next_request = self._prepare_products_request(
+                csrf_token=csrf_token,
+                page=page,
+                page_size=page_size
+            )
             manager.add_request(next_request)
 
-    def craw_keywords(self, index=0, page=1, extend_keywords_only=False, products_only=False):
-        keywords = self.db.get_all_keywords(extend_keywords_only=extend_keywords_only,
-                                     products_only=products_only)
-        negative_keywords = self.db.get_negative_keywords()
+    def craw_keywords(self, index=0, page=1):
+        """craw keywords infomation
+
+        craw all keywords and contains products keywords, base keywords and extension keywords.
+
+        Args:
+            index (int): the keywords list index for the beginning craw.
+            page (int): the keyword request page for the beginning craw.
+        """
+        keywords = self.database.get_all_keywords()
+        negative_keywords = self.database.get_negative_keywords()
         keyword_manager = RequestManager()
 
         page_size = 10
@@ -71,10 +93,15 @@ class Spider():
             print('[Keyword] %04d-%03d:"%s"' % (index, page, keyword), end=" ")
 
             new_request = keyword_manager.get_request()
-            if self.db.is_keyword_need_update(keyword):
-                response = self.send_request(new_request)
-                page, page_keywords = parser.parse_keyword(response, page, page_size, negative_keywords)
-                self.db.upsert_keywords(page_keywords)
+            if self.database.is_keyword_need_update(keyword):
+                response = self._send_request(new_request)
+                page, page_keywords = parser.parse_keyword(
+                    response=response,
+                    page=page,
+                    page_size=page_size,
+                    negative_keywords=negative_keywords
+                )
+                self.database.upsert_keywords(page_keywords)
             else:
                 print('is exist & unneed update', end=" ")
                 page = None
@@ -91,9 +118,13 @@ class Spider():
             next_request = self._prepare_keywords_request(keyword, page, page_size)
             keyword_manager.add_request(next_request)
 
-    def craw_rank(self, index=0, extend_keywords_only=False, products_only=False):
-        keywords = self.db.get_all_keywords(extend_keywords_only=extend_keywords_only,
-                                            products_only=products_only)
+    def craw_rank(self, index=0):
+        """craw keywords rank information.
+
+        Args:
+            index (int): the beginning craw index of the keywords list.
+        """
+        keywords = self.database.get_all_keywords()
         keywords = [re.sub(" +", " ", x.lower()) for x in keywords]
         keyword = keywords[index]
         ctoken = self._get_ctoken()
@@ -109,14 +140,14 @@ class Spider():
         while manager.has_request():
             print('[Rank] %04d:"%s"' % (index, keyword), end=" ")
 
-            if self.db.rank_exsit_unneed_update(keyword):
+            if self.database.rank_exsit_unneed_update(keyword):
                 print('is exist & unneed update', end=" ")
                 index += 1
             else:
                 new_request = manager.get_request()
-                response = self.send_request(new_request)
+                response = self._send_request(new_request)
                 index, rank = parser.parse_rank(response, index, keywords)
-                self.db.upsert_rank(rank)
+                self.database.upsert_rank(rank)
             print("[done]")
 
             if index is None or index >= len(keywords):
@@ -126,7 +157,9 @@ class Spider():
             manager.add_request(new_request)
 
     def craw_p4p(self):
-        self.db.clear_p4p()
+        """craw p4p keywords and information"""
+
+        self.database.clear_p4p()
         manager = RequestManager()
         csrf_token = self._get_p4p_csrf_token()
         page = 1
@@ -137,12 +170,12 @@ class Spider():
             print('[P4P] %02d' % page, end=" ")
 
             new_request = manager.get_request()
-            response = self.send_request(new_request)
+            response = self._send_request(new_request)
             page, p4ps = parser.parse_p4p(response=response)
-            self.db.add_p4ps(p4ps)
+            self.database.add_p4ps(p4ps)
             print("[done]")
 
-            if page is None :
+            if page is None:
                 break
             new_request = self._prepare_p4p_request(page=page, csrf_token=csrf_token)
             manager.add_request(new_request)
@@ -169,7 +202,8 @@ class Spider():
         return req.prepare()
 
     def _prepare_products_request(self, csrf_token, page, page_size):
-        url = "http://hz-productposting.alibaba.com/product/managementproducts/asyQueryProductsList.do"
+        url = "http://hz-productposting.alibaba.com/product/managementproducts/\
+asyQueryProductsList.do"
         headers = {
             'Host': 'hz-productposting.alibaba.com',
             'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64; rv:48.0) Gecko/20100101 Firefox/48.0',
@@ -232,13 +266,17 @@ class Spider():
             'Accept-Language': 'zh-CN,en-US;q=0.7,en;q=0.3',
             'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
             'X-Requested-With': 'XMLHttpRequest',
-            'Referer': 'http://hz-mydata.alibaba.com/self/keyword.htm?spm=a2700.7756200.1998618981.63.32KNMS',
+            'Referer': 'http://hz-mydata.alibaba.com/self/keyword.htm?\
+spm=a2700.7756200.1998618981.63.32KNMS',
             'Connection': 'keep-alive',
         }
         data = {
             'keyword': keyword,
         }
-        req = requests.Request('POST', url, params=params, data=data, headers=headers, cookies=self.cookies)
+        req = requests.Request(
+            'POST', url, params=params, data=data, headers=headers,
+            cookies=self.cookies
+        )
         return req.prepare()
 
     def _get_product_csrf_token(self):
@@ -267,8 +305,8 @@ class Spider():
             'Connection': 'keep-alive',
             'Upgrade-Insecure-Requests': '1',
         }
-        r = session.get('http://i.alibaba.com/index.htm', allow_redirects=False)
-        if r.status_code != requests.codes.ok:
+        resp = session.get('http://i.alibaba.com/index.htm', allow_redirects=False)
+        if resp.status_code != 200:
             self.cookies = self._get_cookies(disable_cache=True)
         return session
 
@@ -304,7 +342,8 @@ class Spider():
             driver.quit()
         return self._create_cookies(driver_cookies)
 
-    def _create_cookies(self, driver_cookies):
+    @staticmethod
+    def _create_cookies(driver_cookies):
         if driver_cookies is None:
             return None
 
@@ -327,7 +366,7 @@ class Spider():
             if cookie.name == 'ctoken':
                 return cookie.value
 
-    def send_request(self, request):
+    def _send_request(self, request):
         # 每次请求之间需要有一定的时间间隔
         time.sleep(random.randint(1, 5))
         return self.session.send(request)
