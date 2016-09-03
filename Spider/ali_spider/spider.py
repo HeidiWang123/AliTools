@@ -328,19 +328,22 @@ class Spider():
                 return cookie.value
 
     def get_keywords(self, extend_keywords_only=False, products_only=False):
+        products_keywords = self.db.get_product_keywords()
+        if products_only:
+            return sorted(set(products_keywords))
+
         extend_keywords = self.get_extend_keywords()
         if extend_keywords_only:
-            return sorted(extend_keywords)
-        keywords = self.db.get_product_keywords()
-        if products_only:
-            return sorted(keywords)
+            return sorted(set(extend_keywords))
 
+        base_keywords = self.db.get_base_file_keywords()
         negative_keywords = self.get_negative_keywords()
-        if extend_keywords is not None and len(extend_keywords) != 0:
-            keywords.extend(extend_keywords)
-        if negative_keywords is not None and len(negative_keywords) != 0:
+        keywords = []
+        keywords.extend(base_keywords)
+        keywords.extend(products_keywords)
+        if negative_keywords is not None and len(negative_keywords) > 0:
             keywords = [x for x in keywords if x not in negative_keywords]
-        return sorted(keywords)
+        return sorted(set(keywords))
 
     def get_extend_keywords(self):
         extend_keywords = None

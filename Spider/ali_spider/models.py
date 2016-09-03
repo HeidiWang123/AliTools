@@ -59,6 +59,11 @@ class P4P(Base):
 
 class Database():
     session = None
+
+    base_keywords_file = "./config/base_keywords.txt"
+    extend_keywords_file = "./config/extend_keywords.txt"
+    negative_keywords_file = "./config/negative_keywords.txt"
+
     def __init__(self):
         engine = create_engine('sqlite:///./database/data.db', echo=False)
         Base.metadata.create_all(engine)
@@ -170,3 +175,21 @@ class Database():
     def close(self):
         self.session.commit()
         self.session.close()
+
+    def get_base_file_keywords(self):
+        extend_keywords = None
+        with open(self.base_keywords_file, 'r') as f:
+            extend_keywords = f.read().splitlines()
+        return extend_keywords
+
+    def get_extend_file_keywords(self):
+        extend_keywords = None
+        with open(self.extend_keywords_file, 'r') as f:
+            extend_keywords = f.read().splitlines()
+        return extend_keywords
+
+    def get_negative_file_keywords(self):
+        negative_keywords = None
+        with open(self.negative_keywords_file, 'r') as f:
+            negative_keywords = f.read().splitlines()
+        return negative_keywords
