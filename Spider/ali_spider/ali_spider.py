@@ -18,9 +18,9 @@ os.environ["PATH"] += os.pathsep + webdriver_path
 
 class SpiderMain():
 
-    def __init__(self, database):
+    def __init__(self, database, init_spider=True):
         self.database = database
-        self.spider = Spider(self.database)
+        self.spider = Spider(self.database) if init_spider else None
 
     def craw(self, craw_products=False, craw_keywords=False, craw_rank=False, craw_p4p=False,
              extend_keywords_only=False, products_only=False, generate_csv=False):
@@ -277,12 +277,28 @@ class SpiderMain():
             for item in p4ps:
                 writer.writerow([item.keyword, item.qs_star, item.tag, item.is_start])
 
+    def generate_month_keywords_csv(self):
+        csv_header = ["关键词", "供应商竞争度", "橱窗数", "热搜度"]
+        csv_file = "./csv/关键词-" + datetime.datetime.now().strftime("%Y%m") + ".csv"
+        keywords = self.database.get_keywords()
+        with open(csv_file, "w", encoding='utf-8-sig') as f:
+            writer = csv.writer(f)
+            writer.writerow(csv_header)
+            for item in keywords:
+                t_keyword = item.value
+                t_company_cnt = item.company_cnt
+                t_showwin_cnt = item.showwin_cnt
+                srh_pv_this_mon = json.loads(item.srh_pv)['srh_pv_this_mon']
+                writer.writerow([t_keyword, t_company_cnt, t_showwin_cnt, srh_pv_this_mon])
+
 if __name__ == "__main__":
     db = Database()
-    spider_main = SpiderMain(db)
+    spider_main = SpiderMain(db, init_spider=False)
+    spider_main.generate_month_keywords_csv()
     # spider_main.craw(craw_products=True, craw_keywords=True, craw_rank=True, craw_p4p=True)
-    # spider_main.spider.craw_keywords(index=2269, page=1)
-    spider_main.generate_csv()
+    # spider_main.spider.craw_keywords()
+    # spider_main.spider.craw_rank()
+    # spider_main.generate_csv()
     # spider_main.generate_unused_keywords_csv()
     # spider_main.generate_month_new_keywords_csv()
     db.close()
