@@ -73,6 +73,16 @@ def parse_keyword(response, page, page_size):
 
     return next_page, keywords
 
+def parse_category(response, index):
+    """category 结果解析器
+    """
+    try:
+        content_categories = response.json()['categories']
+        category = [x['enName'] for x in content_categories]
+        return index+1, category
+    except KeyError:
+        raise ParseError("数据解析错误")
+
 def parse_rank(response, index, keywords):
     """rank 结果解析器
     """
@@ -121,6 +131,6 @@ def _get_next_page(start, page, size, count):
 
     return next_page
 
-class OverRequestCountError(Exception):
+class ParseError(Exception):
     def __init__(self, value):
-        super(OverRequestCountError, self).__init__(value)
+        super(ParseError, self).__init__(value)

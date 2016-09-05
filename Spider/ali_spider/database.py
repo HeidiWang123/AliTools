@@ -28,22 +28,50 @@ class Database():
         BASE.metadata.create_all(engine)
         self.session = sessionmaker(bind=engine)()
 
-    def is_products_need_update(self):
-        """measure if a product record need update
+    def get_products(self):
+        return self.session.query(Product).all()
 
-        If the product update date is befor today, then it should update.
+    def get_keyword(self, value):
+        keyword = self.session.query(Keyword).filter_by(value=value).first()
+        return keyword
+
+    def get_all_keywords(self):
+        return self.session.query(Keyword).all()
+
+    def get_p4ps(self):
+        """query P4P records from database and return P4P object list.
 
         Returns:
-            bool: if need update, return True, else return False
+            list: a list contain all P4P objects from database.
         """
-        products_count = self.session.query(Product).count()
-        need_update_count = self.session.query(Product).filter(Product.update < date.today()).count()
-        return products_count == 0 or need_update_count > 0
+        return self.session.query(P4P).all()
+
+    def get_product_keywords(self):
+        """Get all products used keywords.
+
+        Returns:
+            list: a sorted keywords list and without duplicate keywords.
+        """
+        keywords = []
+        products_keywords = self.session.query(Product.keywords).all()
+        for item in products_keywords:
+            keyword_list = [x[0] for x in item]
+            keywords.extend(keyword_list)
+        return keywords
+
+    def get_product_modify_time(self, product_id=None, style_no=None):
+        return self.session.query(
+            Product.modify_time).filter_by(id=product_id, style_no=style_no
+        ).scalar()
 
     def delete_all_products(self):
         """Delete all products in datebase."""
 
         self.session.query(Product).delete()
+        self.session.commit()
+
+    def delete_all_p4p(self):
+        self.session.query(P4P).delete()
         self.session.commit()
 
     def add_products(self, products):
@@ -57,24 +85,6 @@ class Database():
             return
         self.session.add_all(products)
         self.session.commit()
-
-    def get_products(self):
-        return self.session.query(Product).all()
-
-    def get_product_modify_time(self, product_id=None, style_no=None):
-        return self.session.query(
-            Product.modify_time).filter_by(id=product_id, style_no=style_no
-        ).scalar()
-
-    def get_craw_keywords(self):
-        keywords = []
-        base_keywords = self.get_base_file_keywords()
-        products_keywords = self.get_product_keywords()
-        extend_keywords = self.get_extend_file_keywords()
-        keywords.extend(base_keywords)
-        keywords.extend(products_keywords)
-        keywords.extend(extend_keywords)
-        return sorted(set(keywords))
 
     def upsert_rank(self, rank):
         """update or insert a Rank object to database
@@ -115,6 +125,10 @@ class Database():
                 self.session.add(keyword)
         self.session.commit()
 
+    def update_keyword_category(self, keyword, category):
+        keyword.category = category
+        self.session.commit()
+
     def add_p4ps(self, p4ps):
         """insert P4P object list to database
 
@@ -126,13 +140,44 @@ class Database():
         self.session.add_all(p4ps)
         self.session.commit()
 
-    def get_p4ps(self):
-        """query P4P records from database and return P4P object list.
+    def is_products_need_update(self):
+        """measure if a product record need update
+
+        If the product update date is befor today, then it should update.
 
         Returns:
-            list: a list contain all P4P objects from database.
+            bool: if need update, return True, else return False
         """
-        return self.session.query(P4P).all()
+        products_count = self.session.query(Product).count()
+        need_update_count = self.session.query(Product).filter(Product.update < date.today()).count()
+        return products_count == 0 or need_update_count > 0
+
+    def is_keyword_need_upsert(self, keyword):
+        """measure if a keyword is need update or insert.
+
+        Args:
+            keyword (str): the keyword should to be measured
+
+        Returns:
+            bool: if a keyword is exist and need update return True, else return False.
+        """
+        keyword = re.sub(" +", " ", keyword.lower())
+        month_ago = datetime.now(get_localzone()).astimezone(timezone('US/Pacific')) + relativedelta(months=-1)
+        record = self.session.query(Keyword).filter(Keyword.value == keyword).first()
+        return record is None or record.update < month_ago.replace(tzinfo=None)
+
+    def is_keyword_category_need_update(self, keyword):
+        """measure a keyword's category information is need update or not.
+
+        If a keyword category is None, return True, else False
+
+        Args:
+            keyword (str): the keyword string.
+
+        Returns:
+            bool: True if need update, else False.
+        """
+        return keyword.category is None or len(keyword.category) == 0
 
     def is_rank_need_upsert(self, keyword):
         """measure if a keyword is need update or insert.
@@ -153,33 +198,6 @@ class Database():
             is_day2update = date.today() > record.update
         return record is not None and not is_day2update
 
-    def is_keyword_need_upsert(self, keyword):
-        """measure if a keyword is need update or insert.
-
-        Args:
-            keyword (str): the keyword should to be measured
-
-        Returns:
-            bool: if a keyword is exist and need update return True, else return False.
-        """
-        keyword = re.sub(" +", " ", keyword.lower())
-        month_ago = datetime.now(get_localzone()).astimezone(timezone('US/Pacific')) + relativedelta(months=-1)
-        record = self.session.query(Keyword).filter(Keyword.value == keyword).first()
-        return record is None or record.update < month_ago.replace(tzinfo=None)
-
-    def get_product_keywords(self):
-        """Get all products used keywords.
-
-        Returns:
-            list: a sorted keywords list and without duplicate keywords.
-        """
-        keywords = []
-        products_keywords = self.session.query(Product.keywords).all()
-        for item in products_keywords:
-            keyword_list = [x[0] for x in item]
-            keywords.extend(keyword_list)
-        return keywords
-
     def get_keyword_rank_info(self, keyword):
         keyword = re.sub(" +", " ", keyword.lower())
         rank = self.session.query(Rank).filter_by(keyword=keyword).first()
@@ -190,32 +208,31 @@ class Database():
     def get_style_no_by_id(self, product_id):
         return self.session.query(Product.style_no).filter_by(id=product_id).scalar()
 
-    def get_keyword(self, value):
-        keyword = self.session.query(Keyword).filter_by(value=value).first()
-        return keyword
-
-    def get_keywords(self):
-        return self.session.query(Keyword).all()
-
-    def clear_p4p(self):
-        self.session.query(P4P).delete()
-        self.session.commit()
-
-    def close(self):
-        self.session.commit()
-        self.session.close()
+    def get_craw_keywords(self):
+        keywords = []
+        base_keywords = self.get_base_file_keywords()
+        products_keywords = self.get_product_keywords()
+        extend_keywords = self.get_extend_file_keywords()
+        keywords.extend(base_keywords)
+        keywords.extend(products_keywords)
+        keywords.extend(extend_keywords)
+        return sorted(set(keywords))
 
     def get_base_file_keywords(self):
         extend_keywords = None
         with open(settings.BASE_KEYWORDS_FILE, 'r') as f:
             extend_keywords = f.read().splitlines()
-        return extend_keywords
+            return extend_keywords
 
     def get_extend_file_keywords(self):
         extend_keywords = None
         with open(settings.EXTEND_KEYWORDS_FILE, 'r') as f:
             extend_keywords = f.read().splitlines()
-        return extend_keywords
+            return extend_keywords
+
+    def close(self):
+        self.session.commit()
+        self.session.close()
 
     def get_negative_file_keywords(self):
         negative_keywords = None

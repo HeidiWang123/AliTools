@@ -80,6 +80,7 @@ class Keyword(BASE):
     srh_pv = Column('srh_pv', JSON_TYPE)
     update = Column('update', DateTime)
     is_p4p_keyword = Column('is_p4p_keyword', Boolean)
+    category = Column('category', ARRAY_TYPE)
 
 class Rank(BASE):
     """docstring for Rank."""
