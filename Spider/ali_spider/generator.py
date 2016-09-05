@@ -106,7 +106,7 @@ class CSV_Generator():
                 writer.writerow([item.keyword, item.qs_star, item.tag, item.is_start])
 
     def generate_month_keywords_csv(self):
-        csv_header = ["关键词", "供应商竞争度", "橱窗数", "热搜度"]
+        csv_header = ["关键词", "供应商竞争度", "橱窗数", "热搜度", "类目"]
         csv_file = "./csv/month-keywords-" + date.today().strftime("%Y%m") + ".csv"
         keywords = self.database.get_keywords()
         with open(csv_file, "w", encoding='utf-8-sig') as f:
@@ -116,5 +116,9 @@ class CSV_Generator():
                 t_keyword = item.value
                 t_company_cnt = item.company_cnt
                 t_showwin_cnt = item.showwin_cnt
-                srh_pv_this_mon = item.srh_pv['srh_pv_this_mon']
-                writer.writerow([t_keyword, t_company_cnt, t_showwin_cnt, srh_pv_this_mon])
+                t_srh_pv_this_mon = item.srh_pv['srh_pv_this_mon']
+                t_category = item.category
+                writer.writerow([
+                    t_keyword, t_company_cnt, t_showwin_cnt, t_srh_pv_this_mon,
+                    t_category
+                ])
