@@ -4,6 +4,7 @@
 import math
 import json
 from datetime import datetime
+from dateutil.relativedelta import relativedelta
 from models import Product, Rank, Keyword, P4P
 
 def parse_product(response, page_size):
@@ -13,7 +14,17 @@ def parse_product(response, page_size):
     json_products = resp_json['products']
     products = list()
     for item in json_products:
-        product = _product_from_json(item)
+        product = Product(
+            id=item.get('id'),
+            style_no=item.get('redModel'),
+            title=item.get('subject'),
+            keywords=item.get('keywords').split(','),
+            owner=item.get('ownerMemberName'),
+            modify_time=datetime.fromtimestamp(int(item.get('modifyTime')) / 1000),
+            is_trade_product=item.get('mappedToYdtProduct'),
+            is_window_product=item.get('isWindowProduct')
+         )
+
         products.append(product)
 
     current_page = resp_json['currentPage']
@@ -21,6 +32,46 @@ def parse_product(response, page_size):
     new_page = _get_next_page(1, current_page, page_size, products_count)
 
     return new_page, products
+
+def parse_keyword(response, page, page_size):
+    """keyword 解析器"""
+
+    resp_json = response.json()
+    resp_keywords = resp_json['value']['data']
+
+    if not resp_json['successed'] or len(resp_keywords) == 0:
+        return None, None
+
+    resp_total = resp_json['value']['total']
+    next_page = None if page >= 500 else _get_next_page(1, page, page_size, resp_total)
+
+    keywords = list()
+    for item in resp_keywords:
+        keyword = Keyword(
+            value=item['keywords'],
+            company_cnt=item['company_cnt'],
+            showwin_cnt=item['showwin_cnt'],
+            repeat_keyword=item.get('repeatKeyword', None),
+            is_p4p_keyword=item['isP4pKeyword'],
+            update=datetime.strptime(item['yyyymm']+'0309', '%Y%m%d%H') + relativedelta(months=+1),
+            srh_pv={
+                'srh_pv_this_mon': item['srh_pv_this_mon'],
+                'srh_pv_last_1mon': item['srh_pv_last_1mon'],
+                'srh_pv_last_2mon': item['srh_pv_last_2mon'],
+                'srh_pv_last_3mon': item['srh_pv_last_3mon'],
+                'srh_pv_last_4mon': item['srh_pv_last_4mon'],
+                'srh_pv_last_5mon': item['srh_pv_last_5mon'],
+                'srh_pv_last_6mon': item['srh_pv_last_6mon'],
+                'srh_pv_last_7mon': item['srh_pv_last_7mon'],
+                'srh_pv_last_8mon': item['srh_pv_last_8mon'],
+                'srh_pv_last_9mon': item['srh_pv_last_9mon'],
+                'srh_pv_last_10mon': item['srh_pv_last_10mon'],
+                'srh_pv_last_11mon': item['srh_pv_last_11mon'],
+            },
+        )
+        keywords.append(keyword)
+
+    return next_page, keywords
 
 def parse_rank(response, index, keywords):
     """rank 结果解析器
@@ -41,58 +92,6 @@ def parse_rank(response, index, keywords):
     next_index = _get_next_page(0, index, 1, len(keywords))
     return next_index, rank
 
-def parse_keyword(response, page, page_size, negative_keywords):
-    """keyword 解析器
-    """
-
-    resp_json = response.json()
-    resp_keywords = resp_json['value']['data']
-
-    if not resp_json['successed'] or len(resp_keywords) == 0:
-        return None, None
-
-    resp_total = resp_json['value']['total']
-    next_page = None if page >= 500 else _get_next_page(1, page, page_size, resp_total)
-
-    keywords = list()
-    for item in resp_keywords:
-        value = item['keywords']
-        if value in negative_keywords:
-            continue
-        value = item['keywords']
-        repeat_keyword = item.get('repeatKeyword', None)
-        company_cnt = item['company_cnt']
-        showwin_cnt = item['showwin_cnt']
-        update = datetime.strptime(item['yyyymm']+'03 09:00:00-0800', '%Y%m%d %H:%M:%S%z')
-        is_p4p_keyword = item.get('isP4pKeyword', None)
-        if is_p4p_keyword is None:
-            # 如果为空则重试
-            return page, None
-        srh_pv = json.dumps({'srh_pv_this_mon': item['srh_pv_this_mon'],
-                             'srh_pv_last_1mon': item['srh_pv_last_1mon'],
-                             'srh_pv_last_2mon': item['srh_pv_last_2mon'],
-                             'srh_pv_last_3mon': item['srh_pv_last_3mon'],
-                             'srh_pv_last_4mon': item['srh_pv_last_4mon'],
-                             'srh_pv_last_5mon': item['srh_pv_last_5mon'],
-                             'srh_pv_last_6mon': item['srh_pv_last_6mon'],
-                             'srh_pv_last_7mon': item['srh_pv_last_7mon'],
-                             'srh_pv_last_8mon': item['srh_pv_last_8mon'],
-                             'srh_pv_last_9mon': item['srh_pv_last_9mon'],
-                             'srh_pv_last_10mon': item['srh_pv_last_10mon'],
-                             'srh_pv_last_11mon': item['srh_pv_last_11mon'],
-                            })
-        keyword = Keyword(value=value,
-                          srh_pv=srh_pv,
-                          update=update,
-                          company_cnt=company_cnt,
-                          showwin_cnt=showwin_cnt,
-                          repeat_keyword=repeat_keyword,
-                          is_p4p_keyword=is_p4p_keyword
-                         )
-        keywords.append(keyword)
-
-    return next_page, keywords
-
 def parse_p4p(response):
     resp_json = response.json()
 
@@ -110,23 +109,6 @@ def parse_p4p(response):
             tag=str(item['tag']),
         ))
     return next_page, p4ps
-
-def _product_from_json(json_item):
-    """将 json 拼装成产品对象并返回
-    """
-
-    timestamp = int(json_item.get('modifyTime', None)) / 1000
-    product = Product(id=json_item.get('id', None),
-                      style_no=json_item.get('redModel', None),
-                      title=json_item.get('subject', None),
-                      keywords=json_item.get('keywords', None),
-                      owner=json_item.get('ownerMemberName', None),
-                      modify_time=datetime.fromtimestamp(timestamp),
-                      is_trade_product=json_item.get('mappedToYdtProduct', None),
-                      is_window_product=json_item.get('isWindowProduct', None)
-                     )
-
-    return product
 
 def _get_next_page(start, page, size, count):
     """根据当前页数、总页数和每页个数返回下一页页数。如果页数不存在，则返回空

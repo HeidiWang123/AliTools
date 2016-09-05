@@ -8,7 +8,8 @@ import os
 import pickle
 import http.cookiejar
 import random
-import http
+from http.client import HTTPConnection
+import os.path
 import requests
 from selenium import webdriver
 from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
@@ -22,16 +23,22 @@ class Spider():
     """爬虫类"""
 
     def __init__(self, database):
+        self._add_webdriver_to_path()
         self.database = database
         self.cookies = self._get_cookies()
         self.session = self._create_session()
-        http.client.HTTPConnection.debuglevel = settings.HTTP_DEBUGLEVEL
+        HTTPConnection.debuglevel = settings.HTTP_DEBUGLEVEL
+
+    @staticmethod
+    def _add_webdriver_to_path():
+        webdriver_path = os.path.abspath(settings.WEBDRIVER_PATH)
+        os.environ["PATH"] += os.pathsep + webdriver_path
 
     def craw_products(self, page=1):
         """craw products
 
         Args:
-            page (int): beging page from craw.
+            page (int): beging page from craw, default value is 1.
 
         """
         if not self.database.is_products_need_update():
@@ -48,15 +55,12 @@ class Spider():
             page_size=page_size
         )
         manager.add_request(first_request)
+        self.database.delete_all_products()
 
-
-        self.database.clear_products()
         while manager.has_request():
             print("[Product] %02d" % page, end=" ")
-
             new_request = manager.get_request()
             response = self._send_request(new_request)
-
             page, products = parser.parse_product(response, page_size)
             self.database.add_products(products)
             print("[done]")
@@ -80,8 +84,7 @@ class Spider():
             index (int): the keywords list index for the beginning craw.
             page (int): the keyword request page for the beginning craw.
         """
-        keywords = self.database.get_all_keywords()
-        negative_keywords = self.database.get_negative_keywords()
+        keywords = self.database.get_craw_keywords()
         keyword_manager = RequestManager()
 
         page_size = 10
@@ -93,13 +96,12 @@ class Spider():
             print('[Keyword] %04d-%03d:"%s"' % (index, page, keyword), end=" ")
 
             new_request = keyword_manager.get_request()
-            if self.database.is_keyword_need_update(keyword):
+            if page > 1 or self.database.is_keyword_need_upsert(keyword):
                 response = self._send_request(new_request)
                 page, page_keywords = parser.parse_keyword(
                     response=response,
                     page=page,
-                    page_size=page_size,
-                    negative_keywords=negative_keywords
+                    page_size=page_size
                 )
                 self.database.upsert_keywords(page_keywords)
             else:
@@ -108,12 +110,10 @@ class Spider():
             print("[done]")
 
             if page is None:
-                page = 1
-                index = index + 1
-                if index < len(keywords):
-                    keyword = keywords[index]
-                else:
+                index, page = (index + 1, 1)
+                if index >= len(keywords):
                     break
+                keyword = keywords[index]
 
             next_request = self._prepare_keywords_request(keyword, page, page_size)
             keyword_manager.add_request(next_request)
