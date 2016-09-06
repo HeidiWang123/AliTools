@@ -76,7 +76,7 @@ class Crawer():
             )
             manager.add_request(next_request)
 
-    def craw_keywords(self, index=0, page=1):
+    def craw_keywords(self, keywords, index=0, page=1):
         """craw keywords infomation
 
         craw all keywords and contains products keywords, base keywords and extension keywords.
@@ -85,7 +85,6 @@ class Crawer():
             index (int): the keywords list index for the beginning craw.
             page (int): the keyword request page for the beginning craw.
         """
-        keywords = self.database.get_craw_keywords()
         keyword_manager = RequestManager()
         page_size = 10
         keyword = keywords[index]
@@ -117,6 +116,8 @@ class Crawer():
 
             next_request = self._prepare_keywords_request(keyword, page, page_size)
             keyword_manager.add_request(next_request)
+
+        self.craw_keywords_category()
 
     def craw_keywords_category(self, index=0):
         """craw keywords category information.
