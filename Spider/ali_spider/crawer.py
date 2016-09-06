@@ -143,7 +143,7 @@ class Crawer():
                 print('is unneed update', end=" ")
                 index += 1
             print("[done]")
-            if index > len(keywords):
+            if index >= len(keywords):
                 break
             keyword = keywords[index]
             next_request = self._prepare_catrgory_request(keyword=keyword.value, ctoken=csrf_token)

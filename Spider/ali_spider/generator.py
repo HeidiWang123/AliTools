@@ -108,7 +108,7 @@ class CSV_Generator():
     def generate_month_keywords_csv(self):
         csv_header = ["关键词", "供应商竞争度", "橱窗数", "热搜度", "类目"]
         csv_file = "./csv/month-keywords-" + date.today().strftime("%Y%m") + ".csv"
-        keywords = self.database.get_keywords()
+        keywords = self.database.get_all_keywords()
         with open(csv_file, "w", encoding='utf-8-sig') as f:
             writer = csv.writer(f)
             writer.writerow(csv_header)
