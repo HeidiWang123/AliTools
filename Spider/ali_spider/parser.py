@@ -97,7 +97,7 @@ def parse_rank(response, index, keywords):
                 'product_id': item['id'],
                 'ranking': item['pageNO'] + item['rowNO']/100,
             })
-        rank.ranking = json.dumps(ranking_list)
+        rank.ranking = ranking_list
 
     next_index = _get_next_page(0, index, 1, len(keywords))
     return next_index, rank

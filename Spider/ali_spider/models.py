@@ -88,7 +88,7 @@ class Rank(BASE):
     __tablename__ = "rank"
 
     keyword = Column('keyword', String, primary_key=True, autoincrement=False)
-    ranking = Column('ranking', JSON_TYPE)
+    ranking = Column('ranking', ARRAY_TYPE)
     update = Column('update', Date, default=date.today)
 
 class P4P(BASE):

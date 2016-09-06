@@ -7,24 +7,61 @@ class CSV_Generator():
     def __init__(self, database):
         self.database = database
 
-    def generate_alibaba_csv(self, extend_keywords_only=False, products_only=False):
+    def generate_overview_csv(self, keywords):
+        keywords = list(set(keywords))
         csv_header = ["关键词", "负责人", "产品编号", "产品排名", "第一位排名", "第一产品",
-                      "最后更新日期", "贸易表现", "橱窗", "P4P", "供应商竞争度", "橱窗数", "热搜度"]
+                      "最后更新日期", "贸易表现", "橱窗", "P4P", "供应商竞争度", "橱窗数",
+                      "热搜度", "数据更新时间"]
 
-        csv_file = "./csv/alibaba" + date.today().strftime("%Y%m%d") + ".csv"
+        csv_file = "./csv/overview" + date.today().strftime("%Y%m%d") + ".csv"
         with open(csv_file, "w", encoding='utf-8-sig') as f:
             writer = csv.writer(f)
             writer.writerow(csv_header)
-            products = self.database.get_products()
-            extend_keywords = self.database.get_all_keywords(extend_keywords_only=True)
-            if extend_keywords_only:
-                self._write_keywords(writer=writer, keywords=extend_keywords)
-                return
-            if products_only:
-                self._write_products(writer=writer, products=products)
-                return
-            self._write_products(writer=writer, products=products)
-            self._write_keywords(writer=writer, keywords=extend_keywords)
+            t_generate_date = date.today()
+            for keyword in keywords:
+                t_keyword = keyword
+                t_owner = t_style_no = t_product_ranking = None
+                t_top1_ranking = t_top1_style_no = t_top1_modify_time = '-'
+                t_is_trade_product = t_is_window_product = t_is_p4p_keyword= None
+                t_company_cnt = t_showwin_cnt = t_srh_pv = "-"
+
+                keyword_info = self.database.get_keyword(t_keyword)
+                if keyword_info is not None:
+                    t_is_p4p_keyword = keyword_info.is_p4p_keyword
+                    t_company_cnt = keyword_info.company_cnt
+                    t_showwin_cnt = keyword_info.showwin_cnt
+                    t_srh_pv = keyword_info.srh_pv['srh_pv_this_mon']
+
+                products = self.database.get_keyword_products(t_keyword)
+                for product in products:
+                    t_owner = product.owner
+                    t_style_no = product.style_no
+                    t_is_trade_product = product.is_trade_product
+                    t_is_window_product = product.is_window_product
+                    t_product_ranking, top1_product_id, t_top1_ranking = \
+                        self.database.get_rank_info(keyword=t_keyword, product_id=product.id)
+                    if t_product_ranking is None:
+                        t_product_ranking = '-'
+                    if top1_product_id is not None:
+                        top1_product = self.database.get_product_by_id(top1_product_id)
+                        t_top1_style_no = top1_product.style_no
+                        t_top1_modify_time = top1_product.modify_time
+                    writer.writerow([
+                        t_keyword, t_owner, t_style_no, t_product_ranking, t_top1_ranking,
+                        t_top1_style_no, t_top1_modify_time, t_is_trade_product,
+                        t_is_window_product, t_is_p4p_keyword, t_company_cnt,
+                        t_showwin_cnt, t_srh_pv, t_generate_date
+                    ])
+                    break
+                else:
+                    if t_style_no is None and t_top1_ranking != '-' and int(t_top1_ranking) < 2:
+                        t_style_no = t_product_ranking = '-'
+                    writer.writerow([
+                        t_keyword, t_owner, t_style_no, t_product_ranking, t_top1_ranking,
+                        t_top1_style_no, t_top1_modify_time, t_is_trade_product,
+                        t_is_window_product, t_is_p4p_keyword, t_company_cnt,
+                        t_showwin_cnt, t_srh_pv, t_generate_date
+                    ])
 
     def generate_unused_keywords_csv(self):
         csv_header = ["关键词", "第一位排名", "第一产品", "供应商竞争度", "橱窗数", "热搜度"]

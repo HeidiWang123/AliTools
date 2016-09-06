@@ -149,13 +149,12 @@ class Crawer():
             next_request = self._prepare_catrgory_request(keyword=keyword.value, ctoken=csrf_token)
             request_manager.add_request(next_request)
 
-    def craw_rank(self, index=0):
+    def craw_rank(self, keywords, index=0):
         """craw keywords rank information.
 
         Args:
             index (int): the beginning craw index of the keywords list.
         """
-        keywords = self.database.get_all_keywords()
         keywords = [re.sub(" +", " ", x.lower()) for x in keywords]
         keyword = keywords[index]
         ctoken = self._get_ctoken()
@@ -171,14 +170,14 @@ class Crawer():
         while manager.has_request():
             print('[Rank] %04d:"%s"' % (index, keyword), end=" ")
 
-            if self.database.rank_exsit_unneed_update(keyword):
-                print('is exist & unneed update', end=" ")
-                index += 1
-            else:
+            if self.database.is_rank_need_upsert(keyword):
                 new_request = manager.get_request()
                 response = self._send_request(new_request)
                 index, rank = parser.parse_rank(response, index, keywords)
                 self.database.upsert_rank(rank)
+            else:
+                print('is exist & unneed update', end=" ")
+                index += 1
             print("[done]")
 
             if index is None or index >= len(keywords):

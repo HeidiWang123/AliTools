@@ -27,9 +27,45 @@ class Database():
         engine = create_engine(settings.DATABASE_URL, echo=settings.DATABASE_ECHO)
         BASE.metadata.create_all(engine)
         self.session = sessionmaker(bind=engine)()
+        self.products = None
 
-    def get_products(self):
-        return self.session.query(Product).all()
+    def get_all_products(self, cache=True):
+        if self.products is None or not cache:
+            self.products = self.session.query(Product).all()
+        return self.products
+
+    def get_keyword_products(self, keyword):
+        keyword = re.sub(" +", " ", keyword.lower())
+        products = self.get_all_products()
+        keyword_products = list()
+        for item in products:
+            keywords = [re.sub(" +", " ", x.lower()) for x in item.keywords]
+            if keyword in keywords:
+                keyword_products.append(item)
+        return keyword_products
+
+    def get_product_by_id(self, product_id):
+        products = self.get_all_products()
+        for product in products:
+            if product.id == product_id:
+                return product
+        return None
+
+    def get_rank_info(self, keyword, product_id):
+        ranking, top1_product_id, top1_ranking = (None, None, None)
+
+        rank_info = self.get_keyword_rank_info(keyword)
+        if rank_info is None:
+            return ranking, top1_product_id, top1_ranking
+
+        for item in rank_info:
+            if item['product_id'] == product_id:
+                ranking = item['ranking']
+                break
+        top1_rank_info = sorted(rank_info, key=lambda x: x['ranking'])[0]
+        top1_product_id = top1_rank_info['product_id']
+        top1_ranking = top1_rank_info['ranking']
+        return ranking, top1_product_id, top1_ranking
 
     def get_keyword(self, value):
         keyword = self.session.query(Keyword).filter_by(value=value).first()
@@ -191,22 +227,15 @@ class Database():
         """
         record = self.session.query(Rank).filter_by(keyword=keyword).first()
         if record is None:
-            return False
-
-        is_day2update = False
-        if record.update is not None:
-            is_day2update = date.today() > record.update
-        return record is not None and not is_day2update
+            return True
+        return date.today() > record.update
 
     def get_keyword_rank_info(self, keyword):
         keyword = re.sub(" +", " ", keyword.lower())
         rank = self.session.query(Rank).filter_by(keyword=keyword).first()
         if rank is None or rank.ranking is None:
             return None
-        return json.loads(rank.ranking)
-
-    def get_style_no_by_id(self, product_id):
-        return self.session.query(Product.style_no).filter_by(id=product_id).scalar()
+        return rank.ranking
 
     def get_craw_keywords(self):
         keywords = []
