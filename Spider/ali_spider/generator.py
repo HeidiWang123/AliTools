@@ -33,6 +33,17 @@ class CSV_Generator():
                     t_srh_pv = keyword_info.srh_pv['srh_pv_this_mon']
 
                 products = self.database.get_keyword_products(t_keyword)
+                if len(products) == 0:
+                    if t_style_no is None and t_top1_ranking != '-' and int(t_top1_ranking) < 2:
+                        t_style_no = t_product_ranking = '-'
+                    writer.writerow([
+                        t_keyword, t_owner, t_style_no, t_product_ranking, t_top1_ranking,
+                        t_top1_style_no, t_top1_modify_time, t_is_trade_product,
+                        t_is_window_product, t_is_p4p_keyword, t_company_cnt,
+                        t_showwin_cnt, t_srh_pv, t_generate_date
+                    ])
+                    continue
+
                 for product in products:
                     t_owner = product.owner
                     t_style_no = product.style_no
@@ -46,16 +57,6 @@ class CSV_Generator():
                         top1_product = self.database.get_product_by_id(top1_product_id)
                         t_top1_style_no = top1_product.style_no
                         t_top1_modify_time = top1_product.modify_time
-                    writer.writerow([
-                        t_keyword, t_owner, t_style_no, t_product_ranking, t_top1_ranking,
-                        t_top1_style_no, t_top1_modify_time, t_is_trade_product,
-                        t_is_window_product, t_is_p4p_keyword, t_company_cnt,
-                        t_showwin_cnt, t_srh_pv, t_generate_date
-                    ])
-                    break
-                else:
-                    if t_style_no is None and t_top1_ranking != '-' and int(t_top1_ranking) < 2:
-                        t_style_no = t_product_ranking = '-'
                     writer.writerow([
                         t_keyword, t_owner, t_style_no, t_product_ranking, t_top1_ranking,
                         t_top1_style_no, t_top1_modify_time, t_is_trade_product,

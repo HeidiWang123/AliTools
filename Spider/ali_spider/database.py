@@ -40,8 +40,7 @@ class Database():
         keyword_products = list()
         for item in products:
             keywords = [re.sub(" +", " ", x.lower()) for x in item.keywords]
-            if keyword in keywords:
-                keyword_products.append(item)
+            keyword_products.extend([item for k in keywords if k==keyword])
         return keyword_products
 
     def get_product_by_id(self, product_id):
@@ -88,10 +87,11 @@ class Database():
         Returns:
             list: a sorted keywords list and without duplicate keywords.
         """
-        keywords = []
-        products_keywords = self.session.query(Product.keywords).all()
+        keywords = list()
+        query_result = self.session.query(Product.keywords).all()
+        products_keywords = [q for q, in query_result]
         for item in products_keywords:
-            keyword_list = [x[0] for x in item]
+            keyword_list = [x for x in item]
             keywords.extend(keyword_list)
         return keywords
 
@@ -226,7 +226,7 @@ class Database():
                 else return False.
         """
         record = self.session.query(Rank).filter_by(keyword=keyword).first()
-        if record is None:
+        if record is None or record.update is None:
             return True
         return date.today() > record.update
 

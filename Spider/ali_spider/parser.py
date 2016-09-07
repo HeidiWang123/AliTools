@@ -2,8 +2,7 @@
 """
 
 import math
-import json
-from datetime import datetime
+from datetime import datetime, date
 from dateutil.relativedelta import relativedelta
 from models import Product, Rank, Keyword, P4P
 
@@ -98,6 +97,7 @@ def parse_rank(response, index, keywords):
                 'ranking': item['pageNO'] + item['rowNO']/100,
             })
         rank.ranking = ranking_list
+        rank.update = date.today()
 
     next_index = _get_next_page(0, index, 1, len(keywords))
     return next_index, rank

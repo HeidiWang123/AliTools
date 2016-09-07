@@ -371,15 +371,15 @@ spm=a2700.7756200.1998618981.63.32KNMS',
     def _get_cookies(self, disable_cache=False):
         cookies = None
         dump_file = './cookies.pkl'
-        if not disable_cache and os.path.exists(dump_file):
-            with open(dump_file, "rb") as dump:
-                cookies = pickle.load(dump)
-        else:
+        if disable_cache or not os.path.exists(dump_file):
             cookies = self._get_cookies_via_selenium()
             if os.path.exists(dump_file):
                 os.remove(dump_file)
             with open(dump_file, "wb") as dump:
                 pickle.dump(cookies, dump)
+        else:
+            with open(dump_file, "rb") as dump:
+                cookies = pickle.load(dump)
         return cookies
 
     def _get_cookies_via_selenium(self):
@@ -398,8 +398,8 @@ spm=a2700.7756200.1998618981.63.32KNMS',
         finally:
             driver_cookies = driver.get_cookies()
             driver.quit()
-        return self._create_cookies(driver_cookies)
 
+        return self._create_cookies(driver_cookies)
     @staticmethod
     def _create_cookies(driver_cookies):
         if driver_cookies is None:
@@ -426,7 +426,7 @@ spm=a2700.7756200.1998618981.63.32KNMS',
 
     def _send_request(self, request):
         # 每次请求之间需要有一定的时间间隔
-        time.sleep(random.randint(1, 5))
+        time.sleep(random.randint(1, 3))
         return self.session.send(request)
 
 class RequestManager():
