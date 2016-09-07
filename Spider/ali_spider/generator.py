@@ -1,4 +1,5 @@
 import csv
+import os
 import json
 from datetime import date
 
@@ -14,6 +15,7 @@ class CSV_Generator():
                       "热搜度", "数据更新时间"]
 
         csv_file = "./csv/overview" + date.today().strftime("%Y%m%d") + ".csv"
+        os.makedirs(os.path.dirname(csv_file), exist_ok=True)
         with open(csv_file, "w", encoding='utf-8-sig') as f:
             writer = csv.writer(f)
             writer.writerow(csv_header)
@@ -64,78 +66,10 @@ class CSV_Generator():
                         t_showwin_cnt, t_srh_pv, t_generate_date
                     ])
 
-    def generate_unused_keywords_csv(self):
-        csv_header = ["关键词", "第一位排名", "第一产品", "供应商竞争度", "橱窗数", "热搜度"]
-        csv_file = "./csv/unused-keywords-" + date.today().strftime("%Y%m%d") + ".csv"
-        keywords = self.database.get_keywords()
-        used_keywords = self.spider.get_keywords()
-        with open(csv_file, "w", encoding='utf-8-sig') as f:
-            writer = csv.writer(f)
-            writer.writerow(csv_header)
-            for item in keywords:
-                keyword = item.value
-                if keyword not in used_keywords:
-
-                    t_keyword = keyword
-                    t_top1_style_no, t_top1_ranking = self._get_top1_rank_info(keyword=keyword)
-                    t_company_cnt = item.company_cnt
-                    t_showwin_cnt = item.showwin_cnt
-                    t_srh_pv = json.loads(item.srh_pv)['srh_pv_this_mon']
-
-                    none_value = {
-                        't_top1_ranking': '-',
-                        't_top1_style_no': '-',
-                        't_company_cnt': '-',
-                        't_showwin_cnt': '-',
-                        't_srh_pv': '-',
-                    }
-                    t_top1_ranking = none_value['t_top1_ranking'] if t_top1_ranking is None else t_top1_ranking
-                    t_top1_style_no = none_value['t_top1_style_no'] if t_top1_style_no is None else t_top1_style_no
-                    t_company_cnt = none_value['t_company_cnt'] if t_company_cnt is None else t_company_cnt
-                    t_showwin_cnt = none_value['t_showwin_cnt'] if t_showwin_cnt is None else t_showwin_cnt
-                    t_srh_pv = none_value['t_srh_pv'] if t_srh_pv is None else t_srh_pv
-
-                    writer.writerow([t_keyword, t_top1_ranking, t_top1_style_no, t_company_cnt,
-                                     t_showwin_cnt, t_srh_pv])
-
-    def generate_month_new_keywords_csv(self):
-        csv_header = ["关键词", "第一位排名", "第一产品", "供应商竞争度", "橱窗数", "热搜度"]
-        csv_file = "./csv/month-new-keywords-" + date.today().strftime("%Y%m%d") + ".csv"
-        keywords = self.database.get_keywords()
-        used_keywords = self.spider.get_keywords()
-        with open(csv_file, "w", encoding='utf-8-sig') as f:
-            writer = csv.writer(f)
-            writer.writerow(csv_header)
-            for item in keywords:
-                keyword = item.value
-                if keyword not in used_keywords:
-                    t_srh_pv = json.loads(item.srh_pv)
-                    srh_pv_this_mon = t_srh_pv['srh_pv_this_mon']
-                    if int(t_srh_pv['srh_pv_last_1mon']) > 0:
-                        continue
-                    t_keyword = keyword
-                    t_top1_style_no, t_top1_ranking = self._get_top1_rank_info(keyword=keyword)
-                    t_company_cnt = item.company_cnt
-                    t_showwin_cnt = item.showwin_cnt
-                    none_value = {
-                        't_top1_ranking': '-',
-                        't_top1_style_no': '-',
-                        't_company_cnt': '-',
-                        't_showwin_cnt': '-',
-                        'srh_pv_this_mon': '-',
-                    }
-                    t_top1_ranking = none_value['t_top1_ranking'] if t_top1_ranking is None else t_top1_ranking
-                    t_top1_style_no = none_value['t_top1_style_no'] if t_top1_style_no is None else t_top1_style_no
-                    t_company_cnt = none_value['t_company_cnt'] if t_company_cnt is None else t_company_cnt
-                    t_showwin_cnt = none_value['t_showwin_cnt'] if t_showwin_cnt is None else t_showwin_cnt
-                    srh_pv_this_mon = none_value['t_srh_pv'] if srh_pv_this_mon is None else srh_pv_this_mon
-
-                    writer.writerow([t_keyword, t_top1_ranking, t_top1_style_no, t_company_cnt,
-                                     t_showwin_cnt, srh_pv_this_mon])
-
     def generate_p4p_csv(self):
         csv_header = ["关键词", "推广评分", "关键词组", "状态"]
         csv_file = "./csv/p4p-" + date.today().strftime("%Y%m%d") + ".csv"
+        os.makedirs(os.path.dirname(csv_file), exist_ok=True)
         p4ps = self.database.get_p4ps()
         with open(csv_file, "w", encoding='utf-8-sig') as f:
             writer = csv.writer(f)
@@ -143,9 +77,10 @@ class CSV_Generator():
             for item in p4ps:
                 writer.writerow([item.keyword, item.qs_star, item.tag, item.is_start])
 
-    def generate_month_keywords_csv(self):
+    def generate_keywords_csv(self):
         csv_header = ["关键词", "供应商竞争度", "橱窗数", "热搜度", "类目"]
         csv_file = "./csv/month-keywords-" + date.today().strftime("%Y%m") + ".csv"
+        os.makedirs(os.path.dirname(csv_file), exist_ok=True)
         keywords = self.database.get_all_keywords()
         with open(csv_file, "w", encoding='utf-8-sig') as f:
             writer = csv.writer(f)
