@@ -370,7 +370,7 @@ spm=a2700.7756200.1998618981.63.32KNMS',
 
     def _get_cookies(self, force_update=False):
         cookies = None
-        dump_file = './cookies.pkl'
+        dump_file = settings.COOKIE_DUMP_FILE
         if force_update or not os.path.exists(dump_file):
             cookies = self._get_cookies_via_selenium()
             if os.path.exists(dump_file):

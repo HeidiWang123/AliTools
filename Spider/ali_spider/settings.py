@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 
 # File path
-WEBDRIVER_PATH = './ali_spider/webdriver/'
+WEBDRIVER_PATH = '/home/everyx/Project/AliTools/Spider/ali_spider/webdriver'
+COOKIE_DUMP_FILE = './cookies.pkl'
 BASE_KEYWORDS_FILE = './config/base_keywords.txt'
 EXTEND_KEYWORDS_FILE = './config/extend_keywords.txt'
 NEGATIVE_KEYWORDS_FILE = './config/negative_keywords.txt'
