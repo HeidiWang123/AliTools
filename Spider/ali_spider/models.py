@@ -97,4 +97,4 @@ class P4P(BASE):
     keyword = Column('keyword', String, primary_key=True, autoincrement=False)
     qs_star = Column('qs_star', Integer)
     is_start = Column('is_start', Boolean)
-    tag = Column('tag', JSON_TYPE)
+    tag = Column('tag', ARRAY_TYPE)

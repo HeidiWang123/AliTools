@@ -366,13 +366,13 @@ spm=a2700.7756200.1998618981.63.32KNMS',
         }
         resp = session.get('http://i.alibaba.com/index.htm', allow_redirects=False)
         if resp.status_code != 200:
-            self.cookies = self._get_cookies(disable_cache=True)
+            session.cookies = self.cookies = self._get_cookies(force_update=True)
         return session
 
-    def _get_cookies(self, disable_cache=False):
+    def _get_cookies(self, force_update=False):
         cookies = None
         dump_file = './cookies.pkl'
-        if disable_cache or not os.path.exists(dump_file):
+        if force_update or not os.path.exists(dump_file):
             cookies = self._get_cookies_via_selenium()
             if os.path.exists(dump_file):
                 os.remove(dump_file)

@@ -12,7 +12,7 @@ if __name__ == "__main__":
     database = Database()
     try:
         ali_crawer = Crawer(database=database)
-        ali_crawer.craw_products()
+        # ali_crawer.craw_products()
         ali_crawer.craw_p4p()
         # keywords = database.get_craw_keywords()
         # ali_crawer.craw_keywords(keywords=keywords)

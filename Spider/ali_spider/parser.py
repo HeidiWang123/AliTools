@@ -4,6 +4,7 @@
 import math
 from datetime import datetime, date
 from dateutil.relativedelta import relativedelta
+from html.parser import HTMLParser
 from models import Product, Rank, Keyword, P4P
 
 def parse_product(response, page_size):
@@ -111,12 +112,13 @@ def parse_p4p(response):
 
     p4ps = list()
     data = resp_json['data']
+    parser = HTMLParser()
     for item in data:
         p4ps.append(P4P(
-            keyword=item['keyword'],
+            keyword=parser.unescape(item['keyword']),
             qs_star=item['qsStar'],
             is_start=(item['state']=="1"),
-            tag=str(item['tag']),
+            tag=item['tag'],
         ))
     return next_page, p4ps
 
