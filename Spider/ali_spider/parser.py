@@ -18,7 +18,7 @@ def parse_product(response, page_size):
             id=item.get('id'),
             style_no=item.get('redModel'),
             title=item.get('subject'),
-            keywords=item.get('keywords').split(','),
+            keywords=[x.strip() for x in item.get('keywords').split(',')],
             owner=item.get('ownerMemberName'),
             modify_time=datetime.fromtimestamp(int(item.get('modifyTime')) / 1000),
             is_trade_product=item.get('mappedToYdtProduct'),
