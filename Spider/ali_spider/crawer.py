@@ -14,6 +14,7 @@ import os.path
 import requests
 from selenium import webdriver
 from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
+from selenium.webdriver.firefox.firefox_profile import FirefoxProfile
 from selenium.common.exceptions import TimeoutException
 import selenium.webdriver.support.ui as ui
 import parser
@@ -387,10 +388,21 @@ spm=a2700.7756200.1998618981.63.32KNMS',
         caps = DesiredCapabilities.FIREFOX
         caps["marionette"] = True
         caps["binary"] = "/usr/bin/firefox"
-        driver = webdriver.Firefox(capabilities=caps)
+        profile = FirefoxProfile()
+        profile.set_preference('permissions.default.stylesheet', 2)
+        profile.set_preference('permissions.default.image', 2)
+        driver = webdriver.Firefox(profile, capabilities=caps)
         driver.get("http://i.alibaba.com")
         try:
-            ui.WebDriverWait(driver, 60).until(
+            driver.switch_to_frame(driver.find_element_by_id("alibaba-login-box"))
+            login_id = driver.find_element_by_id("fm-login-id")
+            login_id.clear()
+            login_id.send_keys(settings.LOGIN_ID)
+            login_password = driver.find_element_by_id("fm-login-password")
+            login_password.clear()
+            login_password.send_keys(settings.LOGIN_PASSWORD)
+            driver.switch_to_default_content()
+            ui.WebDriverWait(driver, settings.LOGIN_TIMEOUT).until(
                 lambda driver: driver.find_elements_by_class_name('mui-login-info'))
         except TimeoutException:
             print("登陆超时，程序结束，请重试！")
