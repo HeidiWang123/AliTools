@@ -4,15 +4,15 @@
 此模块主要包含与数据库操作相关的类 Database
 """
 
-import json
+import os
 import re
 from datetime import datetime, date
 from dateutil.relativedelta import relativedelta
 from pytz import timezone
 from tzlocal import get_localzone
-from sqlalchemy import create_engine, exists, func
+from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy.sql import and_
+from sqlalchemy.engine.url import make_url
 from models import BASE, Product, Keyword, Rank, P4P
 import settings
 
@@ -24,6 +24,8 @@ class Database():
     """
 
     def __init__(self):
+        url = make_url(settings.DATABASE_URL)
+        os.makedirs(os.path.dirname(url.database), exist_ok=True)
         engine = create_engine(settings.DATABASE_URL, echo=settings.DATABASE_ECHO)
         BASE.metadata.create_all(engine)
         self.session = sessionmaker(bind=engine)()
