@@ -67,6 +67,7 @@ class Database():
         return ranking, top1_product_id, top1_ranking
 
     def get_keyword(self, value):
+        value = re.sub(" +", " ", value.lower())
         keyword = self.session.query(Keyword).filter_by(value=value).first()
         return keyword
 
@@ -132,7 +133,7 @@ class Database():
             return
         record = self.session.query(Rank).filter_by(keyword=rank.keyword).first()
         if record is not None:
-            record.keyword = rank.keyword
+            record.keyword = re.sub(" +", " ", rank.keyword.lower())
             record.ranking = rank.ranking
             record.update = rank.update
         else:
@@ -225,6 +226,7 @@ class Database():
             bool: if the rank information of the keyword is exist and need update, return True,
                 else return False.
         """
+        keyword = re.sub(" +", " ", keyword.lower())
         record = self.session.query(Rank).filter_by(keyword=keyword).first()
         if record is None or record.update is None:
             return True

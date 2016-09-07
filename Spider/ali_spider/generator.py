@@ -19,7 +19,7 @@ class CSV_Generator():
             writer.writerow(csv_header)
             t_generate_date = date.today()
             for keyword in keywords:
-                t_keyword = keyword
+                t_keyword = keyword.strip()
                 t_owner = t_style_no = t_product_ranking = None
                 t_top1_ranking = t_top1_style_no = t_top1_modify_time = '-'
                 t_is_trade_product = t_is_window_product = t_is_p4p_keyword= None
