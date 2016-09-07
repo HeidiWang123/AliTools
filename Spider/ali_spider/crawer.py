@@ -34,10 +34,6 @@ class Crawer():
     def _init_webdriver():
         webdriver_path = os.path.abspath(settings.WEBDRIVER_PATH)
         os.environ["PATH"] += os.pathsep + webdriver_path
-        logfile = os.path.join(os.getcwd(), "geckodriver.log")
-        print(logfile)
-        if os.path.exists(logfile):
-            os.remove(logfile)
 
     def craw_products(self, page=1):
         """craw products
@@ -410,6 +406,9 @@ spm=a2700.7756200.1998618981.63.32KNMS',
         finally:
             driver_cookies = driver.get_cookies()
             driver.quit()
+            logfile = os.path.join(os.getcwd(), "geckodriver.log")
+            if os.path.exists(logfile):
+                os.remove(logfile)
 
         return self._create_cookies(driver_cookies)
 
