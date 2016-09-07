@@ -6,3 +6,4 @@ Spider/tests/*
 *.csv
 **/config/*
 **/csv/*
+Spider/ali_spider/settings.py
