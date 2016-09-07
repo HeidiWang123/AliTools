@@ -14,7 +14,6 @@ import os.path
 import requests
 from selenium import webdriver
 from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
-from selenium.webdriver.firefox.firefox_profile import FirefoxProfile
 from selenium.common.exceptions import TimeoutException
 import selenium.webdriver.support.ui as ui
 import parser
@@ -25,16 +24,20 @@ class Crawer():
     """爬虫类"""
 
     def __init__(self, database):
-        self._add_webdriver_to_path()
+        self._init_webdriver()
         self.database = database
         self.cookies = self._get_cookies()
         self.session = self._create_session()
         HTTPConnection.debuglevel = settings.HTTP_DEBUGLEVEL
 
     @staticmethod
-    def _add_webdriver_to_path():
+    def _init_webdriver():
         webdriver_path = os.path.abspath(settings.WEBDRIVER_PATH)
         os.environ["PATH"] += os.pathsep + webdriver_path
+        logfile = os.path.join(os.getcwd(), "geckodriver.log")
+        print(logfile)
+        if os.path.exists(logfile):
+            os.remove(logfile)
 
     def craw_products(self, page=1):
         """craw products
@@ -388,10 +391,7 @@ spm=a2700.7756200.1998618981.63.32KNMS',
         caps = DesiredCapabilities.FIREFOX
         caps["marionette"] = True
         caps["binary"] = "/usr/bin/firefox"
-        profile = FirefoxProfile()
-        profile.set_preference('permissions.default.stylesheet', 2)
-        profile.set_preference('permissions.default.image', 2)
-        driver = webdriver.Firefox(profile, capabilities=caps)
+        driver = webdriver.Firefox(capabilities=caps)
         driver.get("http://i.alibaba.com")
         try:
             driver.switch_to_frame(driver.find_element_by_id("alibaba-login-box"))
@@ -412,6 +412,7 @@ spm=a2700.7756200.1998618981.63.32KNMS',
             driver.quit()
 
         return self._create_cookies(driver_cookies)
+
     @staticmethod
     def _create_cookies(driver_cookies):
         if driver_cookies is None:
