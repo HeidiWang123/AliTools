@@ -14,8 +14,6 @@ import os.path
 import requests
 from selenium.common import exceptions as selenium_exceptions
 from selenium import webdriver
-from selenium.webdriver.common.keys import Keys
-from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 import selenium.webdriver.support.ui as ui
 import parser
@@ -388,7 +386,7 @@ spm=a2700.7756200.1998618981.63.32KNMS',
         # 使用最后一个版本的 wires web driver
         caps = DesiredCapabilities.FIREFOX
         caps["marionette"] = True
-        caps["binary"] = "/usr/bin/firefox"
+        caps["binary"] = settings.FIREFOX_PATH
         driver = webdriver.Firefox(capabilities=caps)
         try:
             driver.set_page_load_timeout(settings.LOGIN_TIMEOUT)

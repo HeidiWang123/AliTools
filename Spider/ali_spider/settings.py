@@ -20,6 +20,7 @@ HTTP_DEBUGLEVEL = 0
 LOGIN_ID = ''
 LOGIN_PASSWORD = ''
 LOGIN_TIMEOUT = 30
+FIREFOX_PATH = '/usr/bin/firefox'
 
 _CONFIG_FILE = './config/config.ini'
 _CONFIG_DICT = {
@@ -32,6 +33,7 @@ _CONFIG_DICT = {
     'LOGIN_ID': ['Login', 'login_id'],
     'LOGIN_PASSWORD': ['Login', 'login_password'],
     'LOGIN_TIMEOUT': ['Login', 'login_timeout'],
+    'FIREFOX_PATH': ['Login', 'firefox_path'],
 }
 
 def read_config():
