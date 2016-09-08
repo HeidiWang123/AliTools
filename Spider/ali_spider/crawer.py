@@ -12,9 +12,11 @@ import random
 from http.client import HTTPConnection
 import os.path
 import requests
+from selenium.common import exceptions as selenium_exceptions
 from selenium import webdriver
+from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
-from selenium.common.exceptions import TimeoutException
 import selenium.webdriver.support.ui as ui
 import parser
 import settings
@@ -32,7 +34,7 @@ class Crawer():
 
     @staticmethod
     def _init_webdriver():
-        webdriver_path = os.path.abspath(settings.WEBDRIVER_PATH)
+        webdriver_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), './webdriver')
         os.environ["PATH"] += os.pathsep + webdriver_path
 
     def craw_products(self, page=1):
@@ -370,7 +372,7 @@ spm=a2700.7756200.1998618981.63.32KNMS',
 
     def _get_cookies(self, force_update=False):
         cookies = None
-        dump_file = settings.COOKIE_DUMP_FILE
+        dump_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), './cookies.pkl')
         if force_update or not os.path.exists(dump_file):
             cookies = self._get_cookies_via_selenium()
             if os.path.exists(dump_file):
@@ -388,7 +390,14 @@ spm=a2700.7756200.1998618981.63.32KNMS',
         caps["marionette"] = True
         caps["binary"] = "/usr/bin/firefox"
         driver = webdriver.Firefox(capabilities=caps)
-        driver.get("http://i.alibaba.com")
+        try:
+            driver.set_page_load_timeout(settings.PAGELOAD_TOMEOUT)
+            driver.get("http://i.alibaba.com")
+        except selenium_exceptions.TimeoutException:
+            ActionChains(driver).\
+                key_down(Keys.CONTROL).send_keys(Keys.ESCAPE).\
+                key_up(Keys.ESCAPE).perform()
+
         try:
             driver.switch_to_frame(driver.find_element_by_id("alibaba-login-box"))
             login_id = driver.find_element_by_id("fm-login-id")
@@ -399,8 +408,8 @@ spm=a2700.7756200.1998618981.63.32KNMS',
             login_password.send_keys(settings.LOGIN_PASSWORD)
             driver.switch_to_default_content()
             ui.WebDriverWait(driver, settings.LOGIN_TIMEOUT).until(
-                lambda driver: driver.find_elements_by_class_name('mui-login-info'))
-        except TimeoutException:
+                lambda driver: "i.alibaba.com/index.htm" in driver.current_url)
+        except selenium_exceptions.TimeoutException:
             print("登陆超时，程序结束，请重试！")
             sys.exit()
         finally:
