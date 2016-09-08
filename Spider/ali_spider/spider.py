@@ -43,7 +43,7 @@ def generate(generate_args):
         for arg in generate_args.action:
             action_args = {
                 'overview': {'keywords': database.get_craw_keywords()},
-                'keywords': {'keywords': database.get_craw_keywords()},
+                'keywords': {},
                 'p4p': {},
             }
             actions.get(arg)(**action_args.get(arg))

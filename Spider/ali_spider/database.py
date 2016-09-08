@@ -267,8 +267,22 @@ class Database():
         self.session.commit()
         self.session.close()
 
-    def get_negative_file_keywords(self):
-        negative_keywords = None
+    def get_negative_keyword_rules(self):
+        negative_keywords = list()
         with open(settings.NEGATIVE_KEYWORDS_FILE, 'r') as f:
-            negative_keywords = f.read().splitlines()
+            for line in f:
+                if line.startswith('#'):
+                    continue
+                line = line.strip()
+                line = line[1:-1] if line.startswith('/') and line.endswith('/') else '^%s$'%line
+                regex = re.compile(line)
+                negative_keywords.append(regex)
         return negative_keywords
+
+    def is_negative_keyword(self, keyword):
+        if keyword is None or keyword == '':
+            return True
+        for rule in self.get_negative_keyword_rules():
+            if rule.search(keyword.strip()):
+                return True
+        return False

@@ -86,6 +86,8 @@ class CSV_Generator():
             writer = csv.writer(f)
             writer.writerow(csv_header)
             for item in keywords:
+                if self.database.is_negative_keyword(item.value):
+                    continue
                 t_keyword = item.value
                 t_company_cnt = item.company_cnt
                 t_showwin_cnt = item.showwin_cnt
