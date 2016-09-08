@@ -16,7 +16,7 @@ from selenium.common import exceptions as selenium_exceptions
 from selenium import webdriver
 from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 import selenium.webdriver.support.ui as ui
-import parser
+import crawparser
 import settings
 
 
@@ -62,7 +62,7 @@ class Crawer():
             print("[Product] %02d" % page, end=" ")
             new_request = manager.get_request()
             response = self._send_request(new_request)
-            page, products = parser.parse_product(response, page_size)
+            page, products = crawparser.parse_product(response, page_size)
             self.database.add_products(products)
             print("[done]")
 
@@ -97,7 +97,7 @@ class Crawer():
             new_request = keyword_manager.get_request()
             if page > 1 or self.database.is_keyword_need_upsert(keyword):
                 response = self._send_request(new_request)
-                page, page_keywords = parser.parse_keyword(
+                page, page_keywords = crawparser.parse_keyword(
                     response=response,
                     page=page,
                     page_size=page_size
@@ -138,7 +138,7 @@ class Crawer():
             new_request = request_manager.get_request()
             if self.database.is_keyword_category_need_update(keyword):
                 response = self._send_request(new_request)
-                index, category = parser.parse_category(response=response, index=index)
+                index, category = crawparser.parse_category(response=response, index=index)
                 self.database.update_keyword_category(keyword=keyword, category=category)
             else:
                 print('is unneed update', end=" ")
@@ -174,7 +174,7 @@ class Crawer():
             if self.database.is_rank_need_upsert(keyword):
                 new_request = manager.get_request()
                 response = self._send_request(new_request)
-                index, rank = parser.parse_rank(response, index, keywords)
+                index, rank = crawparser.parse_rank(response, index, keywords)
                 self.database.upsert_rank(rank)
             else:
                 print('is exist & unneed update', end=" ")
@@ -202,7 +202,7 @@ class Crawer():
 
             new_request = manager.get_request()
             response = self._send_request(new_request)
-            page, p4ps = parser.parse_p4p(response=response)
+            page, p4ps = crawparser.parse_p4p(response=response)
             self.database.add_p4ps(p4ps)
             print("[done]")
 
