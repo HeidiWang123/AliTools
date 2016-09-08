@@ -19,8 +19,7 @@ HTTP_DEBUGLEVEL = 0
 # Login
 LOGIN_ID = ''
 LOGIN_PASSWORD = ''
-PAGELOAD_TOMEOUT = 15
-LOGIN_TIMEOUT = 60*2
+LOGIN_TIMEOUT = 30
 
 _CONFIG_FILE = './config/config.ini'
 _CONFIG_DICT = {
@@ -32,7 +31,6 @@ _CONFIG_DICT = {
     'HTTP_DEBUGLEVEL': ['Debug', 'http_debuglevel'],
     'LOGIN_ID': ['Login', 'login_id'],
     'LOGIN_PASSWORD': ['Login', 'login_password'],
-    'PAGELOAD_TOMEOUT': ['Login', 'pageload_tomeout'],
     'LOGIN_TIMEOUT': ['Login', 'login_timeout'],
 }
 
@@ -44,7 +42,7 @@ def read_config():
         try:
             if key == 'DATABASE_ECHO':
                 setattr(module, key, config.getboolean(value[0], value[1]))
-            elif key in ['HTTP_DEBUGLEVEL', 'PAGELOAD_TOMEOUT', 'LOGIN_TIMEOUT']:
+            elif key in ['HTTP_DEBUGLEVEL', 'LOGIN_TIMEOUT']:
                 setattr(module, key, config.getint(value[0], value[1]))
             else:
                 setattr(module, key, config.get(value[0], value[1]))

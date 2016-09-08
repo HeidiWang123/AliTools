@@ -391,7 +391,7 @@ spm=a2700.7756200.1998618981.63.32KNMS',
         caps["binary"] = "/usr/bin/firefox"
         driver = webdriver.Firefox(capabilities=caps)
         try:
-            driver.set_page_load_timeout(settings.PAGELOAD_TOMEOUT)
+            driver.set_page_load_timeout(settings.LOGIN_TIMEOUT)
             driver.get("http://i.alibaba.com")
         except selenium_exceptions.TimeoutException:
             pass
