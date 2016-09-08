@@ -22,6 +22,9 @@ LOGIN_PASSWORD = ''
 LOGIN_TIMEOUT = 30
 FIREFOX_PATH = '/usr/bin/firefox'
 
+# Generate
+REG_CATEGORIES = ''
+
 _CONFIG_FILE = './config/config.ini'
 _CONFIG_DICT = {
     'BASE_KEYWORDS_FILE': ['Files', 'base_keywords_file'],
@@ -34,6 +37,7 @@ _CONFIG_DICT = {
     'LOGIN_PASSWORD': ['Login', 'login_password'],
     'LOGIN_TIMEOUT': ['Login', 'login_timeout'],
     'FIREFOX_PATH': ['Login', 'firefox_path'],
+    'REG_CATEGORIES': ['Generate', 'reg_categories'],
 }
 
 def read_config():

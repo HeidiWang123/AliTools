@@ -3,10 +3,12 @@
 """data generator module
 """
 
+import re
 import csv
 import os
 from datetime import date
 from dateutil.relativedelta import relativedelta
+import settings
 
 class CSV_Generator():
 
@@ -83,7 +85,7 @@ class CSV_Generator():
                 writer.writerow([item.keyword, item.qs_star, item.tag, item.is_start])
 
     def generate_keywords_csv(self):
-        csv_header = ["关键词", "供应商竞争度", "橱窗数",
+        csv_header = ["关键词",  "供应商竞争度", "橱窗数",
                       date.today().strftime("%Y/%m热搜度"),
                       (date.today() + relativedelta(months=-1)).strftime("%Y/%m热搜度"),
                       (date.today() + relativedelta(months=-2)).strftime("%Y/%m热搜度"),
@@ -103,10 +105,17 @@ class CSV_Generator():
         with open(csv_file, "w", encoding='utf-8-sig') as f:
             writer = csv.writer(f)
             writer.writerow(csv_header)
+            regex = re.compile(settings.REG_CATEGORIES)
+            print(settings.REG_CATEGORIES)
             for item in keywords:
                 if self.database.is_negative_keyword(item.value):
                     continue
+                if len(self.database.get_keyword_products(item.value)) > 0:
+                    continue
+                if not regex.search(str(item.category)):
+                    continue
                 t_keyword = item.value
+                t_category = item.category
                 t_company_cnt = item.company_cnt
                 t_showwin_cnt = item.showwin_cnt
                 t_srh_pv_this_mon = item.srh_pv['srh_pv_this_mon']
@@ -121,10 +130,9 @@ class CSV_Generator():
                 t_srh_pv_last_9mon = item.srh_pv['srh_pv_last_9mon']
                 t_srh_pv_last_10mon = item.srh_pv['srh_pv_last_10mon']
                 t_srh_pv_last_11mon = item.srh_pv['srh_pv_last_11mon']
-                t_category = item.category
                 writer.writerow([
-                    t_keyword, t_company_cnt, t_showwin_cnt, t_srh_pv_this_mon, t_srh_pv_last_1mon,
-                    t_srh_pv_last_2mon, t_srh_pv_last_3mon, t_srh_pv_last_4mon, t_srh_pv_last_5mon,
-                    t_srh_pv_last_6mon, t_srh_pv_last_7mon, t_srh_pv_last_8mon, t_srh_pv_last_9mon,
-                    t_srh_pv_last_10mon, t_srh_pv_last_11mon, t_category
+                    t_keyword, t_company_cnt, t_showwin_cnt, t_srh_pv_this_mon,
+                    t_srh_pv_last_1mon, t_srh_pv_last_2mon, t_srh_pv_last_3mon, t_srh_pv_last_4mon,
+                    t_srh_pv_last_5mon, t_srh_pv_last_6mon, t_srh_pv_last_7mon, t_srh_pv_last_8mon,
+                    t_srh_pv_last_9mon, t_srh_pv_last_10mon, t_srh_pv_last_11mon, t_category
                 ])
