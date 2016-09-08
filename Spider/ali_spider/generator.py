@@ -1,7 +1,12 @@
+# -*- coding: utf-8 -*-
+
+"""data generator module
+"""
+
 import csv
 import os
-import json
 from datetime import date
+from dateutil.relativedelta import relativedelta
 
 class CSV_Generator():
 
@@ -24,7 +29,7 @@ class CSV_Generator():
                 t_keyword = keyword.strip()
                 t_owner = t_style_no = t_product_ranking = None
                 t_top1_ranking = t_top1_style_no = t_top1_modify_time = '-'
-                t_is_trade_product = t_is_window_product = t_is_p4p_keyword= None
+                t_is_trade_product = t_is_window_product = t_is_p4p_keyword = None
                 t_company_cnt = t_showwin_cnt = t_srh_pv = "-"
 
                 keyword_info = self.database.get_keyword(t_keyword)
@@ -78,7 +83,20 @@ class CSV_Generator():
                 writer.writerow([item.keyword, item.qs_star, item.tag, item.is_start])
 
     def generate_keywords_csv(self):
-        csv_header = ["关键词", "供应商竞争度", "橱窗数", "热搜度", "类目"]
+        csv_header = ["关键词", "供应商竞争度", "橱窗数",
+                      date.today().strftime("%Y/%m热搜度"),
+                      (date.today() + relativedelta(months=-1)).strftime("%Y/%m热搜度"),
+                      (date.today() + relativedelta(months=-2)).strftime("%Y/%m热搜度"),
+                      (date.today() + relativedelta(months=-3)).strftime("%Y/%m热搜度"),
+                      (date.today() + relativedelta(months=-4)).strftime("%Y/%m热搜度"),
+                      (date.today() + relativedelta(months=-5)).strftime("%Y/%m热搜度"),
+                      (date.today() + relativedelta(months=-6)).strftime("%Y/%m热搜度"),
+                      (date.today() + relativedelta(months=-7)).strftime("%Y/%m热搜度"),
+                      (date.today() + relativedelta(months=-8)).strftime("%Y/%m热搜度"),
+                      (date.today() + relativedelta(months=-9)).strftime("%Y/%m热搜度"),
+                      (date.today() + relativedelta(months=-10)).strftime("%Y/%m热搜度"),
+                      (date.today() + relativedelta(months=-11)).strftime("%Y/%m热搜度"),
+                      "类目"]
         csv_file = "./csv/month-keywords-" + date.today().strftime("%Y%m") + ".csv"
         os.makedirs(os.path.dirname(csv_file), exist_ok=True)
         keywords = self.database.get_all_keywords()
@@ -92,8 +110,21 @@ class CSV_Generator():
                 t_company_cnt = item.company_cnt
                 t_showwin_cnt = item.showwin_cnt
                 t_srh_pv_this_mon = item.srh_pv['srh_pv_this_mon']
+                t_srh_pv_last_1mon = item.srh_pv['srh_pv_last_1mon']
+                t_srh_pv_last_2mon = item.srh_pv['srh_pv_last_2mon']
+                t_srh_pv_last_3mon = item.srh_pv['srh_pv_last_3mon']
+                t_srh_pv_last_4mon = item.srh_pv['srh_pv_last_4mon']
+                t_srh_pv_last_5mon = item.srh_pv['srh_pv_last_5mon']
+                t_srh_pv_last_6mon = item.srh_pv['srh_pv_last_6mon']
+                t_srh_pv_last_7mon = item.srh_pv['srh_pv_last_7mon']
+                t_srh_pv_last_8mon = item.srh_pv['srh_pv_last_8mon']
+                t_srh_pv_last_9mon = item.srh_pv['srh_pv_last_9mon']
+                t_srh_pv_last_10mon = item.srh_pv['srh_pv_last_10mon']
+                t_srh_pv_last_11mon = item.srh_pv['srh_pv_last_11mon']
                 t_category = item.category
                 writer.writerow([
-                    t_keyword, t_company_cnt, t_showwin_cnt, t_srh_pv_this_mon,
-                    t_category
+                    t_keyword, t_company_cnt, t_showwin_cnt, t_srh_pv_this_mon, t_srh_pv_last_1mon,
+                    t_srh_pv_last_2mon, t_srh_pv_last_3mon, t_srh_pv_last_4mon, t_srh_pv_last_5mon,
+                    t_srh_pv_last_6mon, t_srh_pv_last_7mon, t_srh_pv_last_8mon, t_srh_pv_last_9mon,
+                    t_srh_pv_last_10mon, t_srh_pv_last_11mon, t_category
                 ])

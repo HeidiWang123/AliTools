@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+
 """database
 
 此模块主要包含与数据库操作相关的类 Database
