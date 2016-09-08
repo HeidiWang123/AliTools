@@ -394,9 +394,7 @@ spm=a2700.7756200.1998618981.63.32KNMS',
             driver.set_page_load_timeout(settings.PAGELOAD_TOMEOUT)
             driver.get("http://i.alibaba.com")
         except selenium_exceptions.TimeoutException:
-            ActionChains(driver).\
-                key_down(Keys.CONTROL).send_keys(Keys.ESCAPE).\
-                key_up(Keys.ESCAPE).perform()
+            pass
 
         try:
             driver.switch_to_frame(driver.find_element_by_id("alibaba-login-box"))
@@ -408,7 +406,7 @@ spm=a2700.7756200.1998618981.63.32KNMS',
             login_password.send_keys(settings.LOGIN_PASSWORD)
             driver.switch_to_default_content()
             ui.WebDriverWait(driver, settings.LOGIN_TIMEOUT).until(
-                lambda driver: "i.alibaba.com/index.htm" in driver.current_url)
+            lambda driver: "i.alibaba.com/index.htm" in driver.current_url)
         except selenium_exceptions.TimeoutException:
             print("登陆超时，程序结束，请重试！")
             sys.exit()
