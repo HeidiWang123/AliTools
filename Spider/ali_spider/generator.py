@@ -23,7 +23,7 @@ class CSV_Generator():
 
         csv_file = "./csv/overview" + date.today().strftime("%Y%m%d") + ".csv"
         os.makedirs(os.path.dirname(csv_file), exist_ok=True)
-        with open(csv_file, "w", encoding='utf-8-sig') as f:
+        with open(csv_file, "w", encoding='utf-8-sig', newline='') as f:
             writer = csv.writer(f)
             writer.writerow(csv_header)
             t_generate_date = date.today()
@@ -78,7 +78,7 @@ class CSV_Generator():
         csv_file = "./csv/p4p-" + date.today().strftime("%Y%m%d") + ".csv"
         os.makedirs(os.path.dirname(csv_file), exist_ok=True)
         p4ps = self.database.get_p4ps()
-        with open(csv_file, "w", encoding='utf-8-sig') as f:
+        with open(csv_file, "w", encoding='utf-8-sig', newline='') as f:
             writer = csv.writer(f)
             writer.writerow(csv_header)
             for item in p4ps:
@@ -102,7 +102,7 @@ class CSV_Generator():
         csv_file = "./csv/month-keywords-" + date.today().strftime("%Y%m") + ".csv"
         os.makedirs(os.path.dirname(csv_file), exist_ok=True)
         keywords = self.database.get_all_keywords()
-        with open(csv_file, "w", encoding='utf-8-sig') as f:
+        with open(csv_file, "w", encoding='utf-8-sig', newline='') as f:
             writer = csv.writer(f)
             writer.writerow(csv_header)
             regex = re.compile(settings.REG_CATEGORIES)
