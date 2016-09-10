@@ -254,13 +254,13 @@ class Database():
 
     def get_base_file_keywords(self):
         extend_keywords = None
-        with open(settings.BASE_KEYWORDS_FILE, 'r') as f:
+        with open(settings.BASE_KEYWORDS_FILE, 'r', encoding='utf-8') as f:
             extend_keywords = f.read().splitlines()
             return extend_keywords
 
     def get_extend_file_keywords(self):
         extend_keywords = None
-        with open(settings.EXTEND_KEYWORDS_FILE, 'r') as f:
+        with open(settings.EXTEND_KEYWORDS_FILE, 'r', encoding='utf-8') as f:
             extend_keywords = f.read().splitlines()
             return extend_keywords
 
@@ -270,7 +270,7 @@ class Database():
 
     def get_negative_keyword_rules(self):
         negative_keywords = list()
-        with open(settings.NEGATIVE_KEYWORDS_FILE, 'r') as f:
+        with open(settings.NEGATIVE_KEYWORDS_FILE, 'r', encoding='utf-8') as f:
             for line in f:
                 if line.startswith('#'):
                     continue
