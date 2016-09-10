@@ -309,6 +309,7 @@ asyQueryProductsList.do"
             "iName": "getKeywordSearchProducts",
             "action": "CommonAction",
             "ctoken": ctoken,
+            random.random(): None,
         }
         headers = {
             'Host': 'hz-mydata.alibaba.com',
