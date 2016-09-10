@@ -86,18 +86,18 @@ class CSV_Generator():
 
     def generate_keywords_csv(self):
         csv_header = ["关键词",  "供应商竞争度", "橱窗数",
-                      date.today().strftime("%Y/%m热搜度"),
-                      (date.today() + relativedelta(months=-1)).strftime("%Y/%m热搜度"),
-                      (date.today() + relativedelta(months=-2)).strftime("%Y/%m热搜度"),
-                      (date.today() + relativedelta(months=-3)).strftime("%Y/%m热搜度"),
-                      (date.today() + relativedelta(months=-4)).strftime("%Y/%m热搜度"),
-                      (date.today() + relativedelta(months=-5)).strftime("%Y/%m热搜度"),
-                      (date.today() + relativedelta(months=-6)).strftime("%Y/%m热搜度"),
-                      (date.today() + relativedelta(months=-7)).strftime("%Y/%m热搜度"),
-                      (date.today() + relativedelta(months=-8)).strftime("%Y/%m热搜度"),
-                      (date.today() + relativedelta(months=-9)).strftime("%Y/%m热搜度"),
-                      (date.today() + relativedelta(months=-10)).strftime("%Y/%m热搜度"),
-                      (date.today() + relativedelta(months=-11)).strftime("%Y/%m热搜度"),
+                      date.today().strftime("%Y/%m{}").format('热搜度'),
+                      (date.today() + relativedelta(months=-1)).strftime("%Y/%m{}").format('热搜度'),
+                      (date.today() + relativedelta(months=-2)).strftime("%Y/%m{}").format('热搜度'),
+                      (date.today() + relativedelta(months=-3)).strftime("%Y/%m{}").format('热搜度'),
+                      (date.today() + relativedelta(months=-4)).strftime("%Y/%m{}").format('热搜度'),
+                      (date.today() + relativedelta(months=-5)).strftime("%Y/%m{}").format('热搜度'),
+                      (date.today() + relativedelta(months=-6)).strftime("%Y/%m{}").format('热搜度'),
+                      (date.today() + relativedelta(months=-7)).strftime("%Y/%m{}").format('热搜度'),
+                      (date.today() + relativedelta(months=-8)).strftime("%Y/%m{}").format('热搜度'),
+                      (date.today() + relativedelta(months=-9)).strftime("%Y/%m{}").format('热搜度'),
+                      (date.today() + relativedelta(months=-10)).strftime("%Y/%m{}").format('热搜度'),
+                      (date.today() + relativedelta(months=-11)).strftime("%Y/%m{}").format('热搜度'),
                       "类目"]
         csv_file = "./csv/month-keywords-" + date.today().strftime("%Y%m") + ".csv"
         os.makedirs(os.path.dirname(csv_file), exist_ok=True)
@@ -106,7 +106,6 @@ class CSV_Generator():
             writer = csv.writer(f)
             writer.writerow(csv_header)
             regex = re.compile(settings.REG_CATEGORIES)
-            print(settings.REG_CATEGORIES)
             for item in keywords:
                 if self.database.is_negative_keyword(item.value):
                     continue
