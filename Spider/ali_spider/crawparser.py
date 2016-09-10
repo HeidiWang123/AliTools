@@ -47,28 +47,31 @@ def parse_keyword(response, page, page_size):
 
     keywords = list()
     for item in resp_keywords:
-        keyword = Keyword(
-            value=item['keywords'],
-            company_cnt=item['company_cnt'],
-            showwin_cnt=item['showwin_cnt'],
-            repeat_keyword=item.get('repeatKeyword', None),
-            is_p4p_keyword=item['isP4pKeyword'],
-            update=datetime.strptime(item['yyyymm']+'0309', '%Y%m%d%H') + relativedelta(months=+1),
-            srh_pv={
-                'srh_pv_this_mon': item['srh_pv_this_mon'],
-                'srh_pv_last_1mon': item['srh_pv_last_1mon'],
-                'srh_pv_last_2mon': item['srh_pv_last_2mon'],
-                'srh_pv_last_3mon': item['srh_pv_last_3mon'],
-                'srh_pv_last_4mon': item['srh_pv_last_4mon'],
-                'srh_pv_last_5mon': item['srh_pv_last_5mon'],
-                'srh_pv_last_6mon': item['srh_pv_last_6mon'],
-                'srh_pv_last_7mon': item['srh_pv_last_7mon'],
-                'srh_pv_last_8mon': item['srh_pv_last_8mon'],
-                'srh_pv_last_9mon': item['srh_pv_last_9mon'],
-                'srh_pv_last_10mon': item['srh_pv_last_10mon'],
-                'srh_pv_last_11mon': item['srh_pv_last_11mon'],
-            },
-        )
+        try:
+            keyword = Keyword(
+                value=item['keywords'],
+                company_cnt=item['company_cnt'],
+                showwin_cnt=item['showwin_cnt'],
+                repeat_keyword=item.get('repeatKeyword', None),
+                is_p4p_keyword=item['isP4pKeyword'],
+                update=datetime.strptime(item['yyyymm']+'0309', '%Y%m%d%H') + relativedelta(months=+1),
+                srh_pv={
+                    'srh_pv_this_mon': item['srh_pv_this_mon'],
+                    'srh_pv_last_1mon': item['srh_pv_last_1mon'],
+                    'srh_pv_last_2mon': item['srh_pv_last_2mon'],
+                    'srh_pv_last_3mon': item['srh_pv_last_3mon'],
+                    'srh_pv_last_4mon': item['srh_pv_last_4mon'],
+                    'srh_pv_last_5mon': item['srh_pv_last_5mon'],
+                    'srh_pv_last_6mon': item['srh_pv_last_6mon'],
+                    'srh_pv_last_7mon': item['srh_pv_last_7mon'],
+                    'srh_pv_last_8mon': item['srh_pv_last_8mon'],
+                    'srh_pv_last_9mon': item['srh_pv_last_9mon'],
+                    'srh_pv_last_10mon': item['srh_pv_last_10mon'],
+                    'srh_pv_last_11mon': item['srh_pv_last_11mon'],
+                },
+            )
+        except KeyError:
+            raise ParseError('数据解析错误 - %s: [%s]' % (type(item), item))
         keywords.append(keyword)
 
     return next_page, keywords
