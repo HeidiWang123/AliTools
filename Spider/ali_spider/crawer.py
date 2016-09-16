@@ -7,10 +7,9 @@ from datetime import datetime
 import time
 import os
 import pickle
-import http.cookiejar
 import random
-from http.client import HTTPConnection
-import os.path
+import http.cookiejar
+import http.client
 import requests
 from selenium.common import exceptions as selenium_exceptions
 from selenium import webdriver
@@ -27,7 +26,7 @@ class Crawer():
         self._init_webdriver()
         self.database = database
         self.session = self._create_session()
-        HTTPConnection.debuglevel = settings.HTTP_DEBUGLEVEL
+        http.client.HTTPConnection.debuglevel = settings.HTTP_DEBUGLEVEL
 
     @staticmethod
     def _init_webdriver():
@@ -210,7 +209,8 @@ class Crawer():
             new_request = self._prepare_p4p_request(page=page, csrf_token=csrf_token)
             manager.add_request(new_request)
 
-    def _prepare_p4p_request(self, page, csrf_token):
+    @staticmethod
+    def _prepare_p4p_request(page, csrf_token):
         url = "http://www2.alibaba.com/asyGetAdKeyword.do"
         headers = {
             'Host': 'www2.alibaba.com',
@@ -231,7 +231,8 @@ class Crawer():
         req = requests.Request('POST', url, data=data, headers=headers)
         return req
 
-    def _prepare_products_request(self, csrf_token, page, page_size):
+    @staticmethod
+    def _prepare_products_request(csrf_token, page, page_size):
         url = "http://hz-productposting.alibaba.com/product/managementproducts/\
 asyQueryProductsList.do"
         headers = {
@@ -260,7 +261,8 @@ asyQueryProductsList.do"
         req = requests.Request('POST', url, data=data, headers=headers)
         return req
 
-    def _prepare_keywords_request(self, keyword, page=1, page_size=10):
+    @staticmethod
+    def _prepare_keywords_request(keyword, page=1, page_size=10):
         url = "http://hz-mydata.alibaba.com/industry/.json?action=CommonAction&iName=searchKeywords"
         headers = {
             'Host': 'hz-mydata.alibaba.com',
@@ -307,7 +309,8 @@ asyQueryProductsList.do"
     def _get_ali_timestamp():
         return ("%.3f" % datetime.now().timestamp()).replace(".", "")
 
-    def _prepare_rank_request(self, keyword, ctoken):
+    @staticmethod
+    def _prepare_rank_request(keyword, ctoken):
         url = "http://hz-mydata.alibaba.com/self/.json"
         params = {
             "iName": "getKeywordSearchProducts",
