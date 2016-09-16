@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 
-"""
+"""Spider Main
 """
 
 import argparse
@@ -9,6 +9,8 @@ from database import Database
 from generator import CSV_Generator
 
 def craw(craw_args):
+    """craw command bind function
+    """
     database = Database()
     try:
         ali_crawer = Crawer(database=database)
@@ -32,6 +34,8 @@ def craw(craw_args):
         database.close()
 
 def generate(generate_args):
+    """generate bind function
+    """
     database = Database()
     try:
         csv_generator = CSV_Generator(database=database)
@@ -52,8 +56,9 @@ def generate(generate_args):
     finally:
         database.close()
 
-
-if __name__ == "__main__":
+def main():
+    """main function
+    """
     parser = argparse.ArgumentParser()
     subparsers = parser.add_subparsers()
     craw_parser = subparsers.add_parser('craw', help="craw data and save to database")
@@ -70,3 +75,6 @@ if __name__ == "__main__":
     generate_parser.set_defaults(func=generate)
     args = parser.parse_args()
     args.func(args)
+
+if __name__ == "__main__":
+    main()
