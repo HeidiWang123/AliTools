@@ -26,7 +26,6 @@ class Crawer():
     def __init__(self, database):
         self._init_webdriver()
         self.database = database
-        self.cookies = self._get_cookies()
         self.session = self._create_session()
         HTTPConnection.debuglevel = settings.HTTP_DEBUGLEVEL
 
@@ -229,8 +228,8 @@ class Crawer():
 "recType":"recommend","currentPage":%d}' % page,
             '_csrf_token_': csrf_token,
         }
-        req = requests.Request('POST', url, data=data, headers=headers, cookies=self.cookies)
-        return req.prepare()
+        req = requests.Request('POST', url, data=data, headers=headers)
+        return req
 
     def _prepare_products_request(self, csrf_token, page, page_size):
         url = "http://hz-productposting.alibaba.com/product/managementproducts/\
@@ -258,8 +257,8 @@ asyQueryProductsList.do"
             'gmtModified': 'asc',
             'marketType': 'all',
         }
-        req = requests.Request('POST', url, data=data, headers=headers, cookies=self.cookies)
-        return req.prepare()
+        req = requests.Request('POST', url, data=data, headers=headers)
+        return req
 
     def _prepare_keywords_request(self, keyword, page=1, page_size=10):
         url = "http://hz-mydata.alibaba.com/industry/.json?action=CommonAction&iName=searchKeywords"
@@ -280,8 +279,8 @@ asyQueryProductsList.do"
             'orderBy': 'srh_pv_this_mon',
             'orderModel': 'desc',
         }
-        req = requests.Request('POST', url, data=data, headers=headers, cookies=self.cookies)
-        return req.prepare()
+        req = requests.Request('POST', url, data=data, headers=headers)
+        return req
 
     def _prepare_catrgory_request(self, keyword, ctoken):
         url = "http://hz-productposting.alibaba.com/product/cate/AjaxRecommendPostCategory.htm"
@@ -289,7 +288,7 @@ asyQueryProductsList.do"
             "keyword": keyword,
             "ctoken": ctoken,
             "origin": None,
-            "_": ("%.3f" % datetime.now().timestamp()).replace(".",""),
+            "_": self._get_ali_timestamp(),
             "language": "en_us",
         }
         headers = {
@@ -297,11 +296,16 @@ asyQueryProductsList.do"
             'Accept': 'application/json, text/javascript, */*; q=0.01',
             'Accept-Language': 'zh-CN,en-US;q=0.7,en;q=0.3',
             'X-Requested-With': 'XMLHttpRequest',
-            'Referer': 'http://hz-productposting.alibaba.com/product/posting.htm?spm=a2700.7756200.1998618981.74.gE0qEV',
+            'Referer': 'http://hz-productposting.alibaba.com/product/posting.htm?spm=a2700.7756200\
+.1998618981.74.gE0qEV',
             'Connection': 'keep-alive',
         }
-        req = requests.Request('GET', url, params=params, headers=headers, cookies=self.cookies)
-        return req.prepare()
+        req = requests.Request('GET', url, params=params, headers=headers)
+        return req
+
+    @staticmethod
+    def _get_ali_timestamp():
+        return ("%.3f" % datetime.now().timestamp()).replace(".", "")
 
     def _prepare_rank_request(self, keyword, ctoken):
         url = "http://hz-mydata.alibaba.com/self/.json"
@@ -325,11 +329,16 @@ spm=a2700.7756200.1998618981.63.32KNMS',
         data = {
             'keyword': keyword,
         }
-        req = requests.Request(
-            'POST', url, params=params, data=data, headers=headers,
-            cookies=self.cookies
-        )
-        return req.prepare()
+
+        req = requests.Request('POST', url, params=params, data=data, headers=headers)
+        return req
+
+    def _get_rank_page_id(self):
+        url = "http://hz-mydata.alibaba.com/self/keyword.htm"
+        html = self.session.get(url).text
+        pattern = r"(?<=dmtrack_pageid=')\w+(?=';)"
+        page_id = re.search(pattern, html).group(0)
+        return page_id
 
     def _get_product_csrf_token(self):
         url = "http://hz-productposting.alibaba.com/product/products_manage.htm"
@@ -355,7 +364,7 @@ spm=a2700.7756200.1998618981.63.32KNMS',
     def _create_session(self):
         """创建 requests session"""
         session = requests.Session()
-        session.cookies = self.cookies
+        session.cookies = self._get_cookies()
         session.headers = {
             'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
             'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64; rv:48.0) Gecko/20100101 Firefox/48.0',
@@ -366,7 +375,7 @@ spm=a2700.7756200.1998618981.63.32KNMS',
         }
         resp = session.get('http://i.alibaba.com/index.htm', allow_redirects=False)
         if resp.status_code != 200:
-            session.cookies = self.cookies = self._get_cookies(force_update=True)
+            session.cookies = self._get_cookies(force_update=True)
         return session
 
     def _get_cookies(self, force_update=False):
@@ -405,7 +414,7 @@ spm=a2700.7756200.1998618981.63.32KNMS',
             login_password.send_keys(settings.LOGIN_PASSWORD)
             driver.switch_to_default_content()
             ui.WebDriverWait(driver, settings.LOGIN_TIMEOUT).until(
-            lambda driver: "i.alibaba.com/index.htm" in driver.current_url)
+                lambda driver: "i.alibaba.com/index.htm" in driver.current_url)
         except selenium_exceptions.TimeoutException:
             print("登陆超时，程序结束，请重试！")
             sys.exit()
@@ -436,16 +445,18 @@ spm=a2700.7756200.1998618981.63.32KNMS',
         return cookies
 
     def _get_ctoken(self):
-        if self.cookies is None:
+        if self.session.cookies is None:
             return None
-        for cookie in self.cookies:
+        for cookie in self.session.cookies:
             if cookie.name == 'ctoken':
                 return cookie.value
 
     def _send_request(self, request):
         # 每次请求之间需要有一定的时间间隔
         time.sleep(random.randint(1, 3))
-        return self.session.send(request)
+        if request.cookies is None:
+            request.cookies = self.session.cookies
+        return self.session.send(request.prepare())
 
 class RequestManager():
     """请求队列管理器。"""
