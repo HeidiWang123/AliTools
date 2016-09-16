@@ -25,6 +25,7 @@ class Crawer():
     def __init__(self, database):
         self._init_webdriver()
         self.database = database
+        self.cookies = self._get_cookies()
         self.session = self._create_session()
         http.client.HTTPConnection.debuglevel = settings.HTTP_DEBUGLEVEL
 
@@ -335,13 +336,6 @@ asyQueryProductsList.do"
         req = requests.Request('POST', url, params=params, data=data, headers=headers)
         return req
 
-    def _get_rank_page_id(self):
-        url = "http://hz-mydata.alibaba.com/self/keyword.htm"
-        html = self.session.get(url).text
-        pattern = r"(?<=dmtrack_pageid=')\w+(?=';)"
-        page_id = re.search(pattern, html).group(0)
-        return page_id
-
     def _get_product_csrf_token(self):
         url = "http://hz-productposting.alibaba.com/product/products_manage.htm"
         html = self.session.get(url).text
@@ -366,7 +360,7 @@ asyQueryProductsList.do"
     def _create_session(self):
         """创建 requests session"""
         session = requests.Session()
-        session.cookies = self._get_cookies()
+        session.cookies = self.cookies
         session.headers = {
             'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
             'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64; rv:48.0) Gecko/20100101 Firefox/48.0',
@@ -377,7 +371,13 @@ asyQueryProductsList.do"
         }
         resp = session.get('http://i.alibaba.com/index.htm', allow_redirects=False)
         if resp.status_code != 200:
-            session.cookies = self._get_cookies(force_update=True)
+            session.cookies = self.cookies = self._get_cookies(force_update=True)
+            session.get('http://i.alibaba.com/index.htm')
+        session.get('http://hz-mydata.alibaba.com/self/keyword.htm')
+        session.get('http://hz-productposting.alibaba.com/product/products_manage.htm')
+        session.get('http://hz-mydata.alibaba.com/industry/keywords.htm')
+        session.get('http://hz-productposting.alibaba.com/product/posting.htm')
+        session.get('http://www2.alibaba.com/home/index.htm')
         return session
 
     def _get_cookies(self, force_update=False):
@@ -434,7 +434,7 @@ asyQueryProductsList.do"
         if driver_cookies is None:
             return None
 
-        cookies = http.cookiejar.CookieJar()
+        cookies = requests.utils.cookiejar_from_dict({})
         for item in driver_cookies:
             item['expires'] = item.get('expiry', None)
             item['rest'] = {'HttpOnly': item.get('httpOnly', None)}
@@ -455,9 +455,12 @@ asyQueryProductsList.do"
 
     def _send_request(self, request):
         # 每次请求之间需要有一定的时间间隔
-        time.sleep(random.randint(1, 3))
         if request.cookies is None:
-            request.cookies = self.session.cookies
+            self.cookies.update(self.session.cookies)
+        else:
+            self.cookies.update(request.cookies)
+        request.cookies = self.cookies
+        time.sleep(random.randint(1, 3))
         return self.session.send(request.prepare())
 
 class RequestManager():
