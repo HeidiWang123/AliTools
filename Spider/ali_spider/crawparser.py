@@ -91,8 +91,9 @@ def parse_rank(response, index, keywords):
     """
     keyword = keywords[index]
     rank = Rank(keyword=keyword)
+    rank.update = date.today()
 
-    json_ranks = response.json()['value']
+    json_ranks = response.json().get('value', None)
     if json_ranks is not None and len(json_ranks) > 0:
         ranking_list = list()
         for item in json_ranks:
@@ -101,7 +102,6 @@ def parse_rank(response, index, keywords):
                 'ranking': item['pageNO'] + item['rowNO']/100,
             })
         rank.ranking = ranking_list
-        rank.update = date.today()
 
     next_index = _get_next_page(0, index, 1, len(keywords))
     return next_index, rank
