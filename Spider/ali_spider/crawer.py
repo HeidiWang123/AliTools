@@ -322,8 +322,7 @@ asyQueryProductsList.do"
             'Accept-Language': 'zh-CN,en-US;q=0.7,en;q=0.3',
             'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
             'X-Requested-With': 'XMLHttpRequest',
-            'Referer': 'http://hz-mydata.alibaba.com/self/keyword.htm?\
-spm=a2700.7756200.1998618981.63.32KNMS',
+            'Referer': 'http://hz-mydata.alibaba.com/self/keyword.htm',
             'Connection': 'keep-alive',
         }
         data = {
