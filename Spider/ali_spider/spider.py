@@ -42,12 +42,14 @@ def generate(generate_args):
         actions = {
             'overview': csv_generator.generate_overview_csv,
             'keywords': csv_generator.generate_keywords_csv,
+            'allkeywords': csv_generator.generate_keywords_csv,
             'p4p': csv_generator.generate_p4p_csv,
         }
         for arg in generate_args.action:
             action_args = {
                 'overview': {'keywords': database.get_craw_keywords()},
                 'keywords': {},
+                'allkeywords': {'is_all': True},
                 'p4p': {},
             }
             actions.get(arg)(**action_args.get(arg))
@@ -68,7 +70,7 @@ def main():
         help='craw specific type items'
     )
     generate_parser.add_argument(
-        '-a', '--action', action='append', choices=['overview', 'keywords', 'p4p'],
+        '-a', '--action', action='append', choices=['overview', 'keywords', 'allkeywords', 'p4p'],
         help='generate specific csv file'
     )
     craw_parser.set_defaults(func=craw)
