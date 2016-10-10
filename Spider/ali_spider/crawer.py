@@ -13,7 +13,6 @@ import http.client
 import requests
 from selenium.common import exceptions as selenium_exceptions
 from selenium import webdriver
-from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 import selenium.webdriver.support.ui as ui
 import crawparser
 import settings
@@ -395,11 +394,7 @@ asyQueryProductsList.do"
         return cookies
 
     def _get_cookies_via_selenium(self):
-        # 使用最后一个版本的 wires web driver
-        caps = DesiredCapabilities.FIREFOX
-        caps["marionette"] = True
-        caps["binary"] = settings.FIREFOX_PATH
-        driver = webdriver.Firefox(capabilities=caps)
+        driver = webdriver.Firefox()
         try:
             driver.set_page_load_timeout(settings.LOGIN_TIMEOUT)
             driver.get("http://i.alibaba.com")
