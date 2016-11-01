@@ -62,7 +62,10 @@ class CSV_Generator():
                         self.database.get_rank_info(keyword=t_keyword, product_id=product.id)
                     if t_product_ranking is None:
                         t_product_ranking = '-'
-                    if top1_product_id is not None:
+                    if top1_product_id is None:
+                        t_top1_ranking = '-'
+                    else:
+                        print(top1_product_id)
                         top1_product = self.database.get_product_by_id(top1_product_id)
                         t_top1_style_no = top1_product.style_no
                         t_top1_modify_time = top1_product.modify_time

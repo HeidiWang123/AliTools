@@ -25,6 +25,10 @@ FIREFOX_PATH = '/usr/bin/firefox'
 # Generate
 REG_CATEGORIES = ''
 
+# Craw
+CRAW_SLEEP_MIN = 1
+CRAW_SLEEP_MAX = 3
+
 _CONFIG_FILE = './config/config.ini'
 _CONFIG_DICT = {
     'BASE_KEYWORDS_FILE': ['Files', 'base_keywords_file'],
@@ -38,6 +42,8 @@ _CONFIG_DICT = {
     'LOGIN_TIMEOUT': ['Login', 'login_timeout'],
     'FIREFOX_PATH': ['Login', 'firefox_path'],
     'REG_CATEGORIES': ['Generate', 'reg_categories'],
+    'CRAW_SLEEP_MIN': ['Craw', 'craw_sleep_min'],
+    'CRAW_SLEEP_MAX': ['Craw', 'craw_sleep_max'],
 }
 
 def read_config():
@@ -50,6 +56,8 @@ def read_config():
                 setattr(module, key, config.getboolean(value[0], value[1]))
             elif key in ['HTTP_DEBUGLEVEL', 'LOGIN_TIMEOUT']:
                 setattr(module, key, config.getint(value[0], value[1]))
+            elif key in ['CRAW_SLEEP_MIN', 'CRAW_SLEEP_MAX']:
+                setattr(module, key, config.getfloat(value[0], value[1]))
             else:
                 setattr(module, key, config.get(value[0], value[1]))
         except (configparser.NoSectionError, configparser.NoOptionError):

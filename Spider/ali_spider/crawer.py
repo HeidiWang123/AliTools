@@ -74,6 +74,8 @@ class Crawer():
             )
             manager.add_request(next_request)
 
+        self._dump_cookies()
+
     def craw_keywords(self, keywords, index=0, page=1):
         """craw keywords infomation
 
@@ -116,6 +118,7 @@ class Crawer():
             keyword_manager.add_request(next_request)
 
         self.craw_keywords_category()
+        self._dump_cookies()
 
     def craw_keywords_category(self, index=0):
         """craw keywords category information.
@@ -148,6 +151,8 @@ class Crawer():
             next_request = self._prepare_catrgory_request(keyword=keyword.value, ctoken=csrf_token)
             request_manager.add_request(next_request)
 
+        self._dump_cookies()
+
     def craw_rank(self, keywords, index=0):
         """craw keywords rank information.
 
@@ -157,33 +162,28 @@ class Crawer():
         keywords = [re.sub(" +", " ", x.lower()) for x in keywords]
         keyword = keywords[index]
         ctoken = self._get_ctoken()
-        manager = RequestManager()
+        dmtrack_pageid = self._get_dmtrack_pageid()
 
         if index >= len(keywords):
             print('index over range')
             return
 
-        first_request = self._prepare_rank_request(keyword=keyword, ctoken=ctoken)
-        manager.add_request(first_request)
-
-        while manager.has_request():
+        while index is not None and index < len(keywords):
             print('[Rank] %04d:"%s"' % (index, keyword), end=" ")
 
             if self.database.is_rank_need_upsert(keyword):
-                new_request = manager.get_request()
+                new_request = self._prepare_rank_request(keyword=keyword, ctoken=ctoken, dmtrack_pageid=dmtrack_pageid)
                 response = self._send_request(new_request)
                 index, rank = crawparser.parse_rank(response, index, keywords)
                 self.database.upsert_rank(rank)
             else:
                 print('is exist & unneed update', end=" ")
                 index += 1
+
+            keyword = keywords[index]
             print("[done]")
 
-            if index is None or index >= len(keywords):
-                break
-            keyword = keywords[index]
-            new_request = self._prepare_rank_request(keyword=keyword, ctoken=ctoken)
-            manager.add_request(new_request)
+        self._dump_cookies()
 
     def craw_p4p(self):
         """craw p4p keywords and information"""
@@ -209,12 +209,14 @@ class Crawer():
             new_request = self._prepare_p4p_request(page=page, csrf_token=csrf_token)
             manager.add_request(new_request)
 
+        self._dump_cookies()
+
     @staticmethod
     def _prepare_p4p_request(page, csrf_token):
         url = "http://www2.alibaba.com/asyGetAdKeyword.do"
         headers = {
             'Host': 'www2.alibaba.com',
-            'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64; rv:48.0) Gecko/20100101 Firefox/48.0',
+            'User-Agent': '"Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:45.0) Gecko/20100101 Firefox/45.0"',
             'Accept': 'application/json, text/javascript, */*; q=0.01',
             'Accept-Language': 'zh-CN,en-US;q=0.7,en;q=0.3',
             'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
@@ -237,7 +239,7 @@ class Crawer():
 asyQueryProductsList.do"
         headers = {
             'Host': 'hz-productposting.alibaba.com',
-            'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64; rv:48.0) Gecko/20100101 Firefox/48.0',
+            'User-Agent': '"Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:45.0) Gecko/20100101 Firefox/45.0"',
             'Accept': 'application/json, text/javascript, */*; q=0.01',
             'Accept-Language': 'zh-CN,en-US;q=0.7,en;q=0.3',
             'Content-Type': 'application/x-www-form-urlencoded',
@@ -266,7 +268,7 @@ asyQueryProductsList.do"
         url = "http://hz-mydata.alibaba.com/industry/.json?action=CommonAction&iName=searchKeywords"
         headers = {
             'Host': 'hz-mydata.alibaba.com',
-            'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64; rv:48.0) Gecko/20100101 Firefox/48.0',
+            'User-Agent': '"Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:45.0) Gecko/20100101 Firefox/45.0"',
             'Accept': '*/*',
             'Accept-Language': 'zh-CN,en-US;q=0.7,en;q=0.3',
             'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
@@ -294,12 +296,11 @@ asyQueryProductsList.do"
             "language": "en_us",
         }
         headers = {
-            'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64; rv:48.0) Gecko/20100101 Firefox/48.0',
+            'User-Agent': '"Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:45.0) Gecko/20100101 Firefox/45.0"',
             'Accept': 'application/json, text/javascript, */*; q=0.01',
             'Accept-Language': 'zh-CN,en-US;q=0.7,en;q=0.3',
             'X-Requested-With': 'XMLHttpRequest',
-            'Referer': 'http://hz-productposting.alibaba.com/product/posting.htm?spm=a2700.7756200\
-.1998618981.74.gE0qEV',
+            'Referer': 'http://hz-productposting.alibaba.com/product/posting.htm',
             'Connection': 'keep-alive',
         }
         req = requests.Request('GET', url, params=params, headers=headers)
@@ -310,19 +311,21 @@ asyQueryProductsList.do"
         return ("%.3f" % datetime.now().timestamp()).replace(".", "")
 
     @staticmethod
-    def _prepare_rank_request(keyword, ctoken):
-        url = "http://hz-mydata.alibaba.com/self/.json"
+    def _prepare_rank_request(keyword, ctoken, dmtrack_pageid):
+        url = "http://hz-mydata.alibaba.com/self/.json?%s" % random.random()
         params = {
             "iName": "getKeywordSearchProducts",
             "action": "CommonAction",
             "ctoken": ctoken,
-            random.random(): None,
+            "dmtrack_pageid": dmtrack_pageid,
         }
         headers = {
             'Host': 'hz-mydata.alibaba.com',
-            'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64; rv:48.0) Gecko/20100101 Firefox/48.0',
+            'User-Agent': '"Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:45.0) Gecko/20100101 Firefox/45.0"',
             'Accept': '*/*',
-            'Accept-Language': 'zh-CN,en-US;q=0.7,en;q=0.3',
+            'Accept-Encoding': 'gzip, deflate',
+            'Accept-Language': 'zh-CN,zh;q=0.8',
+            'Origin': 'http://hz-mydata.alibaba.com',
             'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
             'X-Requested-With': 'XMLHttpRequest',
             'Referer': 'http://hz-mydata.alibaba.com/self/keyword.htm',
@@ -331,7 +334,6 @@ asyQueryProductsList.do"
         data = {
             'keyword': keyword,
         }
-
         req = requests.Request('POST', url, params=params, data=data, headers=headers)
         return req
 
@@ -362,7 +364,7 @@ asyQueryProductsList.do"
         session.cookies = self.cookies
         session.headers = {
             'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-            'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64; rv:48.0) Gecko/20100101 Firefox/48.0',
+            'User-Agent': '"Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:45.0) Gecko/20100101 Firefox/45.0"',
             'Accept-Language': 'zh-CN,en-US;q=0.7,en;q=0.3',
             'Accept-Encoding': 'gzip, deflate',
             'Connection': 'keep-alive',
@@ -384,14 +386,20 @@ asyQueryProductsList.do"
         dump_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), './cookies.pkl')
         if force_update or not os.path.exists(dump_file):
             cookies = self._get_cookies_via_selenium()
-            if os.path.exists(dump_file):
-                os.remove(dump_file)
-            with open(dump_file, "wb") as dump:
-                pickle.dump(cookies, dump)
+            self._dump_cookies(cookies=cookies)
         else:
             with open(dump_file, "rb") as dump:
                 cookies = pickle.load(dump)
         return cookies
+
+    def _dump_cookies(self, cookies=None):
+        dump_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), './cookies.pkl')
+        if os.path.exists(dump_file):
+            os.remove(dump_file)
+        with open(dump_file, "wb") as dump:
+            if cookies is None:
+                cookies = self.session.cookies
+            pickle.dump(cookies, dump)
 
     def _get_cookies_via_selenium(self):
         driver = webdriver.Firefox()
@@ -445,8 +453,16 @@ asyQueryProductsList.do"
         if self.session.cookies is None:
             return None
         for cookie in self.session.cookies:
-            if cookie.name == 'ctoken':
-                return cookie.value
+            if cookie.name == 'xman_us_t':
+                pattern = r"(?<=ctoken=)\w+(?=&)"
+                return re.search(pattern, cookie.value).group(0)
+
+    def _get_dmtrack_pageid(self):
+        url = "http://hz-mydata.alibaba.com/self/keyword.htm"
+        html = self.session.get(url).text
+        pattern = r"(?<=dmtrack_pageid=')\w+(?=')"
+        dmtrack_pageid = re.search(pattern, html).group(0)
+        return dmtrack_pageid
 
     def _send_request(self, request):
         # 每次请求之间需要有一定的时间间隔
@@ -455,8 +471,9 @@ asyQueryProductsList.do"
         else:
             self.cookies.update(request.cookies)
         request.cookies = self.cookies
-        time.sleep(random.randint(1, 3))
-        return self.session.send(request.prepare())
+        resp = self.session.send(request.prepare())
+        time.sleep(random.uniform(settings.CRAW_SLEEP_MIN, settings.CRAW_SLEEP_MAX))
+        return resp
 
 class RequestManager():
     """请求队列管理器。"""
