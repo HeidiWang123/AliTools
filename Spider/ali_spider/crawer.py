@@ -17,7 +17,6 @@ import selenium.webdriver.support.ui as ui
 import crawparser
 import settings
 
-
 class Crawer():
     """爬虫类"""
 
@@ -73,9 +72,7 @@ class Crawer():
                 page_size=page_size
             )
             manager.add_request(next_request)
-
-        self._dump_cookies()
-
+        
     def craw_keywords(self, keywords, index=0, page=1):
         """craw keywords infomation
 
@@ -118,8 +115,7 @@ class Crawer():
             keyword_manager.add_request(next_request)
 
         self.craw_keywords_category()
-        self._dump_cookies()
-
+        
     def craw_keywords_category(self, index=0):
         """craw keywords category information.
 
@@ -150,9 +146,7 @@ class Crawer():
             keyword = keywords[index]
             next_request = self._prepare_catrgory_request(keyword=keyword.value, ctoken=csrf_token)
             request_manager.add_request(next_request)
-
-        self._dump_cookies()
-
+        
     def craw_rank(self, keywords, index=0):
         """craw keywords rank information.
 
@@ -160,7 +154,6 @@ class Crawer():
             index (int): the beginning craw index of the keywords list.
         """
         keywords = [re.sub(" +", " ", x.lower()) for x in keywords]
-        keyword = keywords[index]
         ctoken = self._get_ctoken()
         dmtrack_pageid = self._get_dmtrack_pageid()
 
@@ -169,6 +162,8 @@ class Crawer():
             return
 
         while index is not None and index < len(keywords):
+            keyword = keywords[index]
+
             print('[Rank] %04d:"%s"' % (index, keyword), end=" ")
 
             if self.database.is_rank_need_upsert(keyword):
@@ -179,12 +174,9 @@ class Crawer():
             else:
                 print('is exist & unneed update', end=" ")
                 index += 1
-
-            keyword = keywords[index]
+            
             print("[done]")
-
-        self._dump_cookies()
-
+      
     def craw_p4p(self):
         """craw p4p keywords and information"""
 
@@ -208,9 +200,7 @@ class Crawer():
                 break
             new_request = self._prepare_p4p_request(page=page, csrf_token=csrf_token)
             manager.add_request(new_request)
-
-        self._dump_cookies()
-
+        
     @staticmethod
     def _prepare_p4p_request(page, csrf_token):
         url = "http://www2.alibaba.com/asyGetAdKeyword.do"
@@ -400,7 +390,7 @@ asyQueryProductsList.do"
             if cookies is None:
                 cookies = self.session.cookies
             pickle.dump(cookies, dump)
-
+        
     def _get_cookies_via_selenium(self):
         driver = webdriver.Firefox()
         try:
@@ -463,7 +453,7 @@ asyQueryProductsList.do"
         pattern = r"(?<=dmtrack_pageid=')\w+(?=')"
         dmtrack_pageid = re.search(pattern, html).group(0)
         return dmtrack_pageid
-
+        
     def _send_request(self, request):
         # 每次请求之间需要有一定的时间间隔
         if request.cookies is None:

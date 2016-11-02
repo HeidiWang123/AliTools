@@ -19,6 +19,7 @@ def craw(craw_args):
             'keywords': ali_crawer.craw_keywords,
             'rank': ali_crawer.craw_rank,
             'p4p': ali_crawer.craw_p4p,
+            'keywordscategory': ali_crawer.craw_keywords_category,
         }
         for arg in craw_args.action:
             action_args = {
@@ -26,6 +27,7 @@ def craw(craw_args):
                 'keywords': {'keywords': database.get_craw_keywords()},
                 'rank': {'keywords': database.get_craw_keywords()},
                 'p4p': {},
+                'keywordscategory': {},
             }
             actions.get(arg)(**action_args.get(arg))
     except Exception:
@@ -66,7 +68,7 @@ def main():
     craw_parser = subparsers.add_parser('craw', help="craw data and save to database")
     generate_parser = subparsers.add_parser('generate', help="generate csv file")
     craw_parser.add_argument(
-        '-a', '--action', action='append', choices=['products', 'keywords', 'rank', 'p4p'],
+        '-a', '--action', action='append', choices=['products', 'keywords', 'rank', 'p4p', 'keywordscategory'],
         help='craw specific type items'
     )
     generate_parser.add_argument(

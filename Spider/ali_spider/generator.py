@@ -29,22 +29,30 @@ class CSV_Generator():
             t_generate_date = date.today()
             for keyword in keywords:
                 t_keyword = keyword.strip()
-                t_owner = t_style_no = t_product_ranking = None
-                t_top1_ranking = t_top1_style_no = t_top1_modify_time = '-'
-                t_is_trade_product = t_is_window_product = t_is_p4p_keyword = None
-                t_company_cnt = t_showwin_cnt = t_srh_pv = "-"
 
+                t_is_p4p_keyword = None
+                t_company_cnt = t_showwin_cnt = t_srh_pv = "-"
                 keyword_info = self.database.get_keyword(t_keyword)
                 if keyword_info is not None:
                     t_is_p4p_keyword = keyword_info.is_p4p_keyword
                     t_company_cnt = keyword_info.company_cnt
                     t_showwin_cnt = keyword_info.showwin_cnt
                     t_srh_pv = keyword_info.srh_pv['srh_pv_this_mon']
+                
+                rank_info = self.database.get_keyword_rank_info(t_keyword)
+                
+                t_top1_ranking = t_top1_style_no = t_top1_modify_time = "-"
+                if rank_info is not None:
+                    top1_rank = sorted(rank_info, key=lambda x: x['ranking'])[0]
+                    top1_product = self.database.get_product_by_id(top1_rank['product_id'])
+                    
+                    t_top1_ranking = top1_rank['ranking']
+                    t_top1_style_no = top1_product.style_no
+                    t_top1_modify_time = top1_product.modify_time
 
+                t_owner = t_style_no = t_product_ranking = t_is_trade_product = t_is_window_product = None
                 products = self.database.get_keyword_products(t_keyword)
                 if len(products) == 0:
-                    if t_style_no is None and t_top1_ranking != '-' and int(t_top1_ranking) < 2:
-                        t_style_no = t_product_ranking = '-'
                     writer.writerow([
                         t_keyword, t_owner, t_style_no, t_product_ranking, t_top1_ranking,
                         t_top1_style_no, t_top1_modify_time, t_is_trade_product,
@@ -52,30 +60,23 @@ class CSV_Generator():
                         t_showwin_cnt, t_srh_pv, t_generate_date
                     ])
                     continue
-
+                
                 for product in products:
                     t_owner = product.owner
                     t_style_no = product.style_no
                     t_is_trade_product = product.is_trade_product
                     t_is_window_product = product.is_window_product
-                    t_product_ranking, top1_product_id, t_top1_ranking = \
-                        self.database.get_rank_info(keyword=t_keyword, product_id=product.id)
-                    if t_product_ranking is None:
-                        t_product_ranking = '-'
-                    if top1_product_id is None:
-                        t_top1_ranking = '-'
-                    else:
-                        print(top1_product_id)
-                        top1_product = self.database.get_product_by_id(top1_product_id)
-                        t_top1_style_no = top1_product.style_no
-                        t_top1_modify_time = top1_product.modify_time
+                    if rank_info is not None:
+                        rank_dict = { x["product_id"]:x["ranking"] for x in rank_info }
+                        if product.id in rank_dict.keys():
+                            t_product_ranking = rank_dict.get(product.id)
                     writer.writerow([
                         t_keyword, t_owner, t_style_no, t_product_ranking, t_top1_ranking,
                         t_top1_style_no, t_top1_modify_time, t_is_trade_product,
                         t_is_window_product, t_is_p4p_keyword, t_company_cnt,
                         t_showwin_cnt, t_srh_pv, t_generate_date
                     ])
-
+                    
     def generate_p4p_csv(self):
         csv_header = ["关键词", "推广评分", "关键词组", "状态"]
         csv_file = "./csv/p4p-" + date.today().strftime("%Y%m%d") + ".csv"
