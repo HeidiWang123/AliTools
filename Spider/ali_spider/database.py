@@ -7,6 +7,8 @@
 
 import os
 import re
+from operator import is_not
+from functools import partial
 from datetime import datetime, date
 from dateutil.relativedelta import relativedelta
 from pytz import timezone
@@ -256,12 +258,16 @@ class Database():
         extend_keywords = None
         with open(settings.BASE_KEYWORDS_FILE, 'r', encoding='utf-8') as f:
             extend_keywords = f.read().splitlines()
+            extend_keywords = filter(partial(is_not, ""), extend_keywords)
+            extend_keywords = filter(partial(is_not, None), extend_keywords)
             return extend_keywords
 
     def get_extend_file_keywords(self):
         extend_keywords = None
         with open(settings.EXTEND_KEYWORDS_FILE, 'r', encoding='utf-8') as f:
             extend_keywords = f.read().splitlines()
+            extend_keywords = filter(partial(is_not, ""), extend_keywords)
+            extend_keywords = filter(partial(is_not, None), extend_keywords)
             return extend_keywords
 
     def close(self):

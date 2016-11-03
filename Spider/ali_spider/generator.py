@@ -50,9 +50,9 @@ class CSV_Generator():
                     t_top1_style_no = top1_product.style_no
                     t_top1_modify_time = top1_product.modify_time
 
-                t_owner = t_style_no = t_product_ranking = t_is_trade_product = t_is_window_product = None
                 products = self.database.get_keyword_products(t_keyword)
                 if len(products) == 0:
+                    t_owner = t_style_no = t_product_ranking = t_is_trade_product = t_is_window_product = None
                     writer.writerow([
                         t_keyword, t_owner, t_style_no, t_product_ranking, t_top1_ranking,
                         t_top1_style_no, t_top1_modify_time, t_is_trade_product,
@@ -62,12 +62,13 @@ class CSV_Generator():
                     continue
                 
                 for product in products:
+                    t_owner = t_style_no = t_product_ranking = t_is_trade_product = t_is_window_product = None
                     t_owner = product.owner
                     t_style_no = product.style_no
                     t_is_trade_product = product.is_trade_product
                     t_is_window_product = product.is_window_product
                     if rank_info is not None:
-                        rank_dict = { x["product_id"]:x["ranking"] for x in rank_info }
+                        rank_dict = { x["product_id"]: x["ranking"] for x in rank_info }
                         if product.id in rank_dict.keys():
                             t_product_ranking = rank_dict.get(product.id)
                     writer.writerow([
