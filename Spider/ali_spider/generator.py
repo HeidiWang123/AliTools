@@ -15,9 +15,11 @@ class CSV_Generator():
     def __init__(self, database):
         self.database = database
 
-    def generate_overview_csv(self, keywords):
-        keywords = list(set(keywords))
-        csv_header = ["关键词", "负责人", "产品编号", "产品排名", "第一位排名", "第一产品",
+    def generate_overview_csv(self, keywords=None):
+        if keywords is None:
+            keywords = self.database.get_craw_keywords()
+            
+        csv_header = ["关键词", "负责人", "产品编号", "产品排名", "最后更新日期", "第一位排名", "第一产品",
                       "最后更新日期", "贸易表现", "橱窗", "P4P", "供应商竞争度", "橱窗数",
                       "热搜度", "数据更新时间"]
 
@@ -52,9 +54,9 @@ class CSV_Generator():
 
                 products = self.database.get_keyword_products(t_keyword)
                 if len(products) == 0:
-                    t_owner = t_style_no = t_product_ranking = t_is_trade_product = t_is_window_product = None
+                    t_owner = t_style_no = t_product_ranking = t_product_modify_time = t_is_trade_product = t_is_window_product = None
                     writer.writerow([
-                        t_keyword, t_owner, t_style_no, t_product_ranking, t_top1_ranking,
+                        t_keyword, t_owner, t_style_no, t_product_ranking, t_product_modify_time, t_top1_ranking,
                         t_top1_style_no, t_top1_modify_time, t_is_trade_product,
                         t_is_window_product, t_is_p4p_keyword, t_company_cnt,
                         t_showwin_cnt, t_srh_pv, t_generate_date
@@ -62,9 +64,10 @@ class CSV_Generator():
                     continue
                 
                 for product in products:
-                    t_owner = t_style_no = t_product_ranking = t_is_trade_product = t_is_window_product = None
+                    t_owner = t_style_no = t_product_ranking = t_product_modify_time = t_is_trade_product = t_is_window_product = None
                     t_owner = product.owner
                     t_style_no = product.style_no
+                    t_product_modify_time = product.modify_time
                     t_is_trade_product = product.is_trade_product
                     t_is_window_product = product.is_window_product
                     if rank_info is not None:
@@ -72,7 +75,7 @@ class CSV_Generator():
                         if product.id in rank_dict.keys():
                             t_product_ranking = rank_dict.get(product.id)
                     writer.writerow([
-                        t_keyword, t_owner, t_style_no, t_product_ranking, t_top1_ranking,
+                        t_keyword, t_owner, t_style_no, t_product_ranking, t_product_modify_time, t_top1_ranking,
                         t_top1_style_no, t_top1_modify_time, t_is_trade_product,
                         t_is_window_product, t_is_p4p_keyword, t_company_cnt,
                         t_showwin_cnt, t_srh_pv, t_generate_date
@@ -89,7 +92,7 @@ class CSV_Generator():
             for item in p4ps:
                 writer.writerow([item.keyword, item.qs_star, item.tag, item.is_start])
 
-    def generate_keywords_csv(self, is_all=False):
+    def generate_keywords_csv(self):
         csv_header = ["关键词",  "供应商竞争度", "橱窗数",
                       date.today().strftime("%Y/%m{}").format('热搜度'),
                       (date.today() + relativedelta(months=-1)).strftime("%Y/%m{}").format('热搜度'),
@@ -104,9 +107,7 @@ class CSV_Generator():
                       (date.today() + relativedelta(months=-10)).strftime("%Y/%m{}").format('热搜度'),
                       (date.today() + relativedelta(months=-11)).strftime("%Y/%m{}").format('热搜度'),
                       "类目"]
-        csv_file = "./csv/available-keywords-" + date.today().strftime("%Y%m%d") + ".csv"
-        if is_all:
-            csv_file = "./csv/all-keywords-" + date.today().strftime("%Y%m") + ".csv"
+        csv_file = "./csv/keywords-" + date.today().strftime("%Y%m") + ".csv"
         os.makedirs(os.path.dirname(csv_file), exist_ok=True)
         keywords = self.database.get_all_keywords()
         with open(csv_file, "w", encoding='utf-8-sig', newline='') as f:
@@ -117,8 +118,6 @@ class CSV_Generator():
                 if self.database.is_negative_keyword(item.value):
                     continue
                 if not regex.search(str(item.category)):
-                    continue
-                if not is_all and len(self.database.get_keyword_products(item.value)) > 0:
                     continue
                 t_keyword = item.value
                 t_category = item.category

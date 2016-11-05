@@ -6,7 +6,6 @@ import sys
 
 # File path
 BASE_KEYWORDS_FILE = './config/base_keywords.txt'
-EXTEND_KEYWORDS_FILE = './config/extend_keywords.txt'
 NEGATIVE_KEYWORDS_FILE = './config/negative_keywords.txt'
 
 # Database setting
@@ -32,7 +31,6 @@ CRAW_SLEEP_MAX = 3
 _CONFIG_FILE = './config/config.ini'
 _CONFIG_DICT = {
     'BASE_KEYWORDS_FILE': ['Files', 'base_keywords_file'],
-    'EXTEND_KEYWORDS_FILE': ['Files', 'extend_keywords_file'],
     'NEGATIVE_KEYWORDS_FILE': ['Files', 'negative_keywords_file'],
     'DATABASE_URL': ['Database', 'database_url'],
     'DATABASE_ECHO': ['Debug', 'database_echo'],

@@ -99,7 +99,7 @@ class Database():
         for item in products_keywords:
             keyword_list = [x for x in item]
             keywords.extend(keyword_list)
-        return keywords
+        return list(set(keywords))
 
     def get_product_modify_time(self, product_id=None, style_no=None):
         return self.session.query(
@@ -248,27 +248,19 @@ class Database():
         keywords = []
         base_keywords = self.get_base_file_keywords()
         products_keywords = self.get_product_keywords()
-        extend_keywords = self.get_extend_file_keywords()
+        unused_keywords = self.get_unused_keywords()
         keywords.extend(base_keywords)
         keywords.extend(products_keywords)
-        keywords.extend(extend_keywords)
+        keywords.extend(unused_keywords)
         return sorted(set(keywords))
 
     def get_base_file_keywords(self):
-        extend_keywords = None
+        base_keywords = None
         with open(settings.BASE_KEYWORDS_FILE, 'r', encoding='utf-8') as f:
-            extend_keywords = f.read().splitlines()
-            extend_keywords = filter(partial(is_not, ""), extend_keywords)
-            extend_keywords = filter(partial(is_not, None), extend_keywords)
-            return extend_keywords
-
-    def get_extend_file_keywords(self):
-        extend_keywords = None
-        with open(settings.EXTEND_KEYWORDS_FILE, 'r', encoding='utf-8') as f:
-            extend_keywords = f.read().splitlines()
-            extend_keywords = filter(partial(is_not, ""), extend_keywords)
-            extend_keywords = filter(partial(is_not, None), extend_keywords)
-            return extend_keywords
+            base_keywords = f.read().splitlines()
+            base_keywords = filter(partial(is_not, ""), base_keywords)
+            base_keywords = filter(partial(is_not, None), base_keywords)
+            return base_keywords
 
     def close(self):
         self.session.commit()
@@ -293,3 +285,17 @@ class Database():
             if rule.search(keyword.strip()):
                 return True
         return False
+
+    def get_unused_keywords(self):
+        unused_keywords = list()
+        
+        all_keywords = self.get_all_keywords()
+        category_regex = re.compile(settings.REG_CATEGORIES)
+        for keyword in all_keywords:
+            if self.is_negative_keyword(keyword.value) or \
+                not category_regex.search(str(keyword.category)) or \
+                len(self.get_keyword_products(keyword.value)) > 0:
+                continue
+            unused_keywords.append(keyword.value)
+            
+        return unused_keywords
