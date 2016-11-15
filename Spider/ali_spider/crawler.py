@@ -4,6 +4,7 @@
 import re
 import sys
 from datetime import datetime
+from dateutil.relativedelta import relativedelta
 import time
 import os
 import pickle
@@ -32,14 +33,14 @@ class Crawler():
         webdriver_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), './webdriver')
         os.environ["PATH"] += os.pathsep + webdriver_path
 
-    def craw_products(self, page=1):
+    def craw_products(self, page=1, forceupdate=False):
         """craw products
 
         Args:
             page (int): beging page from craw, default value is 1.
 
         """
-        if not self.database.is_products_need_update():
+        if not forceupdate and not self.database.is_products_need_update():
             print("[Product] unneed update")
             return
 
@@ -73,7 +74,7 @@ class Crawler():
             )
             manager.add_request(next_request)
         
-    def craw_keywords(self, keywords=None, index=0, page=1):
+    def craw_keywords(self, keywords=None, index=0, page=1, forceupdate=False):
         """craw keywords infomation
 
         craw all keywords and contains products keywords, base keywords and extension keywords.
@@ -99,6 +100,7 @@ class Crawler():
             if page > 1 or self.database.is_keyword_need_upsert(keyword):
                 response = self._send_request(new_request)
                 page, page_keywords = crawlerparser.parse_keyword(
+                    keyword=keyword,
                     response=response,
                     page=page,
                     page_size=page_size
@@ -120,7 +122,7 @@ class Crawler():
 
         self.craw_keywords_category()
         
-    def craw_keywords_category(self, index=0):
+    def craw_keywords_category(self, index=0, forceupdate=False):
         """craw keywords category information.
 
         Args:
@@ -151,7 +153,7 @@ class Crawler():
             next_request = self._prepare_catrgory_request(keyword=keyword.value, ctoken=csrf_token)
             request_manager.add_request(next_request)
         
-    def craw_rank(self, keywords=None, index=0):
+    def craw_rank(self, keywords=None, index=0, forceupdate=False):
         """craw keywords rank information.
 
         Args:
@@ -172,8 +174,8 @@ class Crawler():
             keyword = keywords[index]
 
             print('[Rank] %04d:"%s"' % (index, keyword), end=" ")
-
-            if self.database.is_rank_need_upsert(keyword):
+            
+            if forceupdate or self.database.is_rank_need_upsert(keyword):
                 new_request = self._prepare_rank_request(keyword=keyword, ctoken=ctoken, dmtrack_pageid=dmtrack_pageid)
                 response = self._send_request(new_request)
                 index, rank = crawlerparser.parse_rank(response, index, keywords)
@@ -184,7 +186,7 @@ class Crawler():
             
             print("[done]")
       
-    def craw_p4p(self):
+    def craw_p4p(self, forceupdate=False):
         """craw p4p keywords and information"""
 
         self.database.delete_all_p4p()

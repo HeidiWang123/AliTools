@@ -36,10 +36,14 @@ class CSV_Generator():
                 t_company_cnt = t_showwin_cnt = t_srh_pv = "-"
                 keyword_info = self.database.get_keyword(t_keyword)
                 if keyword_info is not None:
-                    t_is_p4p_keyword = keyword_info.is_p4p_keyword
-                    t_company_cnt = keyword_info.company_cnt
-                    t_showwin_cnt = keyword_info.showwin_cnt
-                    t_srh_pv = keyword_info.srh_pv['srh_pv_this_mon']
+                    if keyword_info.is_p4p_keyword is not None:
+                        t_is_p4p_keyword = keyword_info.is_p4p_keyword
+                    if keyword_info.company_cnt is not None:
+                        t_company_cnt = keyword_info.company_cnt
+                    if keyword_info.showwin_cnt is not None:
+                        t_showwin_cnt = keyword_info.showwin_cnt
+                    if keyword_info.srh_pv is not None:
+                        t_srh_pv = keyword_info.srh_pv['srh_pv_this_mon']
                 
                 rank_info = self.database.get_keyword_rank_info(t_keyword)
                 

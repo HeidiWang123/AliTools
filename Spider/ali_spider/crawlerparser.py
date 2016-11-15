@@ -6,6 +6,7 @@ from datetime import datetime, date
 from dateutil.relativedelta import relativedelta
 from html.parser import HTMLParser
 from models import Product, Rank, Keyword, P4P
+from json.decoder import JSONDecodeError
 
 def parse_product(response, page_size):
     """产品结果解析器
@@ -33,7 +34,7 @@ def parse_product(response, page_size):
 
     return new_page, products
 
-def parse_keyword(response, page, page_size):
+def parse_keyword(keyword, response, page, page_size):
     """keyword 解析器"""
 
     resp_json = response.json()
@@ -48,12 +49,12 @@ def parse_keyword(response, page, page_size):
     keywords = list()
     for item in resp_keywords:
         try:
-            keyword = Keyword(
+            new_keyword = Keyword(
                 value=item['keywords'],
                 company_cnt=item['company_cnt'],
                 showwin_cnt=item['showwin_cnt'],
                 repeat_keyword=item.get('repeatKeyword', None),
-                is_p4p_keyword=item['isP4pKeyword'],
+                is_p4p_keyword=item.get('isP4pKeyword', None),
                 update=datetime.strptime(item['yyyymm']+'0309', '%Y%m%d%H') + relativedelta(months=+1),
                 srh_pv={
                     'srh_pv_this_mon': item['srh_pv_this_mon'],
@@ -71,8 +72,16 @@ def parse_keyword(response, page, page_size):
                 },
             )
         except KeyError:
-            raise ParseError('数据解析错误 - %s: [%s]' % (type(item), item))
-        keywords.append(keyword)
+            raise ParseError('数据解析错误 - %s: %s' % (type(item), item))
+        
+        keywords.append(new_keyword)
+
+    if keyword not in [x.value for x in keywords]:
+        keywords.append(Keyword(
+            value=keyword,
+            update=datetime.strptime(item['yyyymm']+'0309', '%Y%m%d%H') + relativedelta(months=+1)
+        ))
+            
 
     return next_page, keywords
 
@@ -92,18 +101,20 @@ def parse_rank(response, index, keywords):
     keyword = keywords[index]
     rank = Rank(keyword=keyword)
     rank.update = date.today()
-
-    json_ranks = response.json().get('value', None)
-    if json_ranks is not None and len(json_ranks) > 0:
-        ranking_list = list()
-        for item in json_ranks:
-            ranking_list.append({
-                'product_id': item['id'],
-                'ranking': item['pageNO'] + item['rowNO']/100,
-            })
-        rank.ranking = ranking_list
-
     next_index = _get_next_page(0, index, 1, len(keywords))
+    try:
+        json_ranks = response.json().get('value', None)
+        if json_ranks is not None and len(json_ranks) > 0:
+            ranking_list = list()
+            for item in json_ranks:
+                ranking_list.append({
+                    'product_id': item['id'],
+                    'ranking': item['pageNO'] + item['rowNO']/100,
+                })
+            rank.ranking = ranking_list
+    except JSONDecodeError:
+        next_index = index
+
     return next_index, rank
 
 def parse_p4p(response):

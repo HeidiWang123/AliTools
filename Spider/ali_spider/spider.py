@@ -23,18 +23,19 @@ def craw(args=None):
             "rank": crawler.craw_rank,
             "p4p": crawler.craw_p4p,
         }
-        
-        actions = [args.action]
-        if args is None:
+
+        if args is not None:
+            actions = [args.action]
+            forceupdate = args.forceupdate
+        else:
             actions = ['products', 'keywords', 'rank']
+            forceupdate = False
             
         for action in actions:
-            func.get(action)()
+            func.get(action)(forceupdate=forceupdate)
             
     except Exception:
         raise
-    finally:
-        database.close()
 
 def generate(args=None):
     """generate bind function
@@ -46,9 +47,9 @@ def generate(args=None):
             'keywords': csv_generator.generate_keywords_csv,
             'p4p': csv_generator.generate_p4p_csv,
         }
-        
-        actions = [args.action]
-        if args is None:
+        if args is not None:
+            actions = [args.action]
+        else:
             actions = ['overview']
             
         for action in actions:
@@ -56,8 +57,6 @@ def generate(args=None):
 
     except Exception:
         raise
-    finally:
-        database.close()
 
 def main():
     """main function
@@ -69,6 +68,9 @@ def main():
     craw_parser.add_argument(
         'action', choices=['products', 'keywords', 'rank', 'p4p'],
         help='craw specific type items'
+    )
+    craw_parser.add_argument(
+        '-f', dest="forceupdate", action="store_true", help='force update'
     )
     generate_parser.add_argument(
         'action', choices=['overview', 'keywords', 'p4p'],
@@ -82,6 +84,8 @@ def main():
     except AttributeError:
         craw()
         generate()
+    finally:
+        database.close()
 
 if __name__ == "__main__":
     main()
