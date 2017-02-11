@@ -17,7 +17,7 @@ class CSV_Generator():
 
     def generate_overview_csv(self, keywords=None):
         if keywords is None:
-            keywords = self.database.get_craw_keywords()
+            keywords = self.database.get_valid_keywords()
             
         csv_header = ["关键词", "负责人", "产品编号", "产品排名", "最后更新日期", "第一位排名", "第一产品",
                       "最后更新日期", "贸易表现", "橱窗", "P4P", "供应商竞争度", "橱窗数",

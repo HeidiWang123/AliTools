@@ -17,6 +17,7 @@ from selenium import webdriver
 import selenium.webdriver.support.ui as ui
 import crawlerparser
 import settings
+from models import Keyword
 
 class Crawler():
     """爬虫类"""
@@ -83,9 +84,11 @@ class Crawler():
             index (int): the keywords list index for the beginning craw.
             page (int): the keyword request page for the beginning craw.
         """
-
+        
         if keywords is None:
             keywords = self.database.get_product_keywords()
+            keywords.extend(self.database.get_base_file_keywords())
+            keywords = sorted(set(keywords))
         
         keyword_manager = RequestManager()
         page_size = 10
@@ -109,9 +112,13 @@ class Crawler():
             else:
                 print('is exist & unneed update', end=" ")
                 page = None
+                       
             print("[done]")
 
             if page is None:
+                # add none record if keywords information is None
+                self.database.insert_none_keyword(keyword)
+                # go to next keyword
                 index, page = (index + 1, 1)
                 if index >= len(keywords):
                     break
@@ -160,7 +167,7 @@ class Crawler():
             index (int): the beginning craw index of the keywords list.
         """
         if keywords is None:
-            keywords = self.database.get_craw_keywords()
+            keywords = self.database.get_valid_keywords()
         
         keywords = [re.sub(" +", " ", x.lower()) for x in keywords]
         ctoken = self._get_ctoken()
@@ -316,8 +323,10 @@ asyQueryProductsList.do"
             "iName": "getKeywordSearchProducts",
             "action": "CommonAction",
             "ctoken": ctoken,
-            "dmtrack_pageid": dmtrack_pageid,
         }
+        if dmtrack_pageid is not None:
+            params["dmtrack_pageid"] = dmtrack_pageid
+        
         headers = {
             'Host': 'hz-mydata.alibaba.com',
             'User-Agent': '"Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:45.0) Gecko/20100101 Firefox/45.0"',
@@ -420,7 +429,7 @@ asyQueryProductsList.do"
             ui.WebDriverWait(driver, settings.LOGIN_TIMEOUT).until(
                 lambda driver: "i.alibaba.com/index.htm" in driver.current_url)
         except selenium_exceptions.TimeoutException:
-            print("登陆超时，程序结束，请重试！")
+            print("Login timeout, please try again.")
             sys.exit()
         finally:
             driver_cookies = driver.get_cookies()
@@ -460,8 +469,11 @@ asyQueryProductsList.do"
         url = "http://hz-mydata.alibaba.com/self/keyword.htm"
         html = self.session.get(url).text
         pattern = r"(?<=dmtrack_pageid=')\w+(?=')"
-        dmtrack_pageid = re.search(pattern, html).group(0)
-        return dmtrack_pageid
+
+        search_result = re.search(pattern, html)
+        if search_result is None or search_result.group(0) is None:
+            return None
+        return search_result.group(0)
         
     def _send_request(self, request):
         # 每次请求之间需要有一定的时间间隔

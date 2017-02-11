@@ -154,19 +154,34 @@ class Database():
         if keywords is None or len(keywords) == 0:
             return
         for keyword in keywords:
-            record = self.session.query(Keyword).filter_by(value=keyword.value).first()
-            if record is not None:
-                record.value = keyword.value
-                record.repeat_keyword = keyword.repeat_keyword
-                record.company_cnt = keyword.company_cnt
-                record.showwin_cnt = keyword.showwin_cnt
-                record.srh_pv = keyword.srh_pv
-                record.update = keyword.update
-                record.is_p4p_keyword = keyword.is_p4p_keyword
-            else:
-                self.session.add(keyword)
+            self.upsert_keyword(keyword=keyword, commit=False)
         self.session.commit()
-
+    
+    def upsert_keyword(self, keyword, commit=True):
+        if keyword is None:
+            return
+        record = self.session.query(Keyword).filter_by(value=keyword.value).first()
+        if record is not None:
+            record.value = keyword.value
+            record.repeat_keyword = keyword.repeat_keyword
+            record.company_cnt = keyword.company_cnt
+            record.showwin_cnt = keyword.showwin_cnt
+            record.srh_pv = keyword.srh_pv
+            record.update = keyword.update
+            record.is_p4p_keyword = keyword.is_p4p_keyword
+        else:
+            self.session.add(keyword)
+        if commit:
+            self.session.commit()
+    
+    def insert_none_keyword(self, keyword):
+        if self.is_keyword_need_upsert(keyword):
+            self.upsert_keyword(
+                Keyword(
+                    value=keyword,
+                    update=datetime.strptime(datetime.today().strftime('%Y%m0309'), '%Y%m%d%H') + relativedelta(months=+1)
+                ))
+    
     def update_keyword_category(self, keyword, category):
         keyword.category = category
         self.session.commit()
@@ -244,15 +259,18 @@ class Database():
             return None
         return rank.ranking
 
-    def get_craw_keywords(self):
-        keywords = []
-        base_keywords = self.get_base_file_keywords()
-        products_keywords = self.get_product_keywords()
-        unused_keywords = self.get_unused_keywords()
-        keywords.extend(base_keywords)
-        keywords.extend(products_keywords)
-        keywords.extend(unused_keywords)
-        return sorted(set(keywords))
+    def get_valid_keywords(self):
+        valid_keywords = []
+        
+        category_regex = re.compile(settings.REG_CATEGORIES)
+        all_keywords = self.get_all_keywords()
+        for keyword in all_keywords:
+            if self.is_negative_keyword(keyword.value) or \
+               not category_regex.search(str(keyword.category)):
+               continue
+            valid_keywords.append(keyword.value)
+
+        return sorted(set(valid_keywords))
 
     def get_base_file_keywords(self):
         base_keywords = None
@@ -285,17 +303,3 @@ class Database():
             if rule.search(keyword.strip()):
                 return True
         return False
-
-    def get_unused_keywords(self):
-        unused_keywords = list()
-        
-        all_keywords = self.get_all_keywords()
-        category_regex = re.compile(settings.REG_CATEGORIES)
-        for keyword in all_keywords:
-            if self.is_negative_keyword(keyword.value) or \
-                not category_regex.search(str(keyword.category)) or \
-                len(self.get_keyword_products(keyword.value)) > 0:
-                continue
-            unused_keywords.append(keyword.value)
-            
-        return unused_keywords

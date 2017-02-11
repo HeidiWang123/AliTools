@@ -74,14 +74,7 @@ def parse_keyword(keyword, response, page, page_size):
         except KeyError:
             raise ParseError('数据解析错误 - %s: %s' % (type(item), item))
         
-        keywords.append(new_keyword)
-
-    if keyword not in [x.value for x in keywords]:
-        keywords.append(Keyword(
-            value=keyword,
-            update=datetime.strptime(item['yyyymm']+'0309', '%Y%m%d%H') + relativedelta(months=+1)
-        ))
-            
+        keywords.append(new_keyword)        
 
     return next_page, keywords
 

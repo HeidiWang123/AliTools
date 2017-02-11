@@ -30,12 +30,12 @@ def craw(args=None):
         else:
             actions = ['products', 'keywords', 'rank']
             forceupdate = False
-            
+
         for action in actions:
             func.get(action)(forceupdate=forceupdate)
             
-    except Exception:
-        raise
+    except Exception as e:
+        print(e);
 
 def generate(args=None):
     """generate bind function
@@ -55,8 +55,10 @@ def generate(args=None):
         for action in actions:
             func.get(action)()
 
-    except Exception:
-        raise
+    except AttributeError:
+        print("product data is expired, please craw it again.")
+    except Exception as e:
+        print(e);
 
 def main():
     """main function
