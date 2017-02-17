@@ -348,8 +348,8 @@ asyQueryProductsList.do"
     def _get_product_csrf_token(self):
         url = "http://hz-productposting.alibaba.com/product/products_manage.htm"
         html = self.session.get(url).text
-        pattern = r"(?<={'_csrf_token_':')\w+(?='})"
-        product_csrf_token = re.search(pattern, html).group(0)
+        pattern = r"_csrf_token_.*:\s?'(\w+)'"
+        product_csrf_token = re.search(pattern, html).group(1)
         return product_csrf_token
 
     def _get_category_csrf_token(self):
