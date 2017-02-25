@@ -260,7 +260,7 @@ class Database():
         return rank.ranking
 
     def get_valid_keywords(self):
-        valid_keywords = []
+        valid_keywords = self.get_product_keywords()
         
         category_regex = re.compile(settings.REG_CATEGORIES)
         all_keywords = self.get_all_keywords()
